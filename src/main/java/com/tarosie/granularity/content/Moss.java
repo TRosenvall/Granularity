@@ -48,10 +48,17 @@ public final class Moss {
      * {@link CompositeBlockEntity#setSlabHalf} uses for composition, so the two never disagree.
      */
     public static boolean upperHalfAt(BlockState state, BlockPos pos, Vec3 hit) {
-        if (!hasTwoHalves(state)) {
+        if (!hasTwoHalves(state) || hit == null) {
             return false;
         }
-        return hit != null && hit.y - pos.getY() >= 0.5;
+        // "Upper" is really "the far half along the slab's axis" now that a slab can stand on end. On
+        // a horizontal double this is the y test it always was; on a vertical one it asks about x or
+        // z instead, so mossing the east side of an east–west double reaches the east half.
+        net.minecraft.core.Direction.Axis axis =
+                state.hasProperty(CompositeSlabBlock.AXIS)
+                        ? state.getValue(CompositeSlabBlock.AXIS)
+                        : net.minecraft.core.Direction.Axis.Y;
+        return axis.choose(hit.x - pos.getX(), hit.y - pos.getY(), hit.z - pos.getZ()) >= 0.5;
     }
 
     /**

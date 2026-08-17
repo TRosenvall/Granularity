@@ -1,13 +1,31 @@
 {
   "variants": {
-    "type=bottom": {
+    "axis=x,type=bottom": {
+      "model": "granularity:block/cobblestone_slab_layered_x_bottom"
+    },
+    "axis=x,type=top": {
+      "model": "granularity:block/cobblestone_slab_layered_x_top"
+    },
+    "axis=x,type=double": {
+      "model": "granularity:block/cobblestone_slab_layered_x_double"
+    },
+    "axis=y,type=bottom": {
       "model": "granularity:block/cobblestone_slab_layered_bottom"
     },
-    "type=top": {
+    "axis=y,type=top": {
       "model": "granularity:block/cobblestone_slab_layered_top"
     },
-    "type=double": {
+    "axis=y,type=double": {
       "model": "granularity:block/cobblestone_slab_layered_double"
+    },
+    "axis=z,type=bottom": {
+      "model": "granularity:block/cobblestone_slab_layered_z_bottom"
+    },
+    "axis=z,type=top": {
+      "model": "granularity:block/cobblestone_slab_layered_z_top"
+    },
+    "axis=z,type=double": {
+      "model": "granularity:block/cobblestone_slab_layered_z_double"
     }
   }
 }

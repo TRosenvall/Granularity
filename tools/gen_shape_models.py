@@ -100,16 +100,33 @@ def shape_model(name, boxes, layers, particle):
     return write_model(name, tinted(boxes, layers, textures), textures)
 
 
-def double_model(name, layers, particle):
+def double_model(name, layers, particle, halves=None):
     """The double slab: two independent half-blocks in one model.
 
     A double slab is two slabs, not one block, so its halves may differ in stone -- and in what grows
-    on them. The upper half's tint indices start at UPPER_BASE, which is also how OverlayBakedModel
+    on them. The far half's tint indices start at UPPER_BASE, which is also how OverlayBakedModel
     tells the two halves apart when it copies quads.
+
+    `halves` is the pair of boxes to split into, so the same function serves a slab standing on end:
+    the concept is "two halves along an axis", and which axis never mattered to any of this.
     """
+    near, far = halves or (BOTTOM, TOP)
     textures = {"particle": f"granularity:block/{particle}"}
-    elements = tinted([BOTTOM], layers, textures) + tinted([TOP], layers, textures, UPPER_BASE)
+    elements = tinted([near], layers, textures) + tinted([far], layers, textures, UPPER_BASE)
     return write_model(name, elements, textures)
+
+
+# The six halves a slab can occupy, by axis. TYPE=BOTTOM is always the negative side of the axis and
+# TOP the positive one, so "bottom" and "top" keep meaning exactly what they meant on y.
+#
+# Vertical slabs cost this mod one blockstate property and nine models. Vanilla has sixty slab blocks
+# and would pay for orientation sixty times over; we have one, because what a slab is made of and how
+# it is worked are components rather than blocks. See CompositeSlabBlock.
+SLAB_HALVES = {
+    "x": (((0, 0, 0), (8, 16, 16)), ((8, 0, 0), (16, 16, 16))),
+    "y": (BOTTOM, TOP),
+    "z": (((0, 0, 0), (16, 16, 8)), ((0, 0, 8), (16, 16, 16))),
+}
 
 
 # Vanilla's lever, element for element. The base is the part made of stone and so the part that
@@ -628,17 +645,27 @@ def main():
     for shape in BOXES:
         total += shape_model(f"cobblestone_{shape}", BOXES[shape], cobble, "cobblestone_full")
     total += shape_model("cobblestone_layered", [FULL], cobble, "cobblestone_full")
-    total += shape_model("cobblestone_slab_layered_bottom", [BOTTOM], cobble, "cobblestone_full")
-    total += shape_model("cobblestone_slab_layered_top", [TOP], cobble, "cobblestone_full")
-    total += double_model("cobblestone_slab_layered_double", cobble, "cobblestone_full")
+    for axis, (near, far) in SLAB_HALVES.items():
+        # y keeps the original names, so the item model and every existing reference stay put.
+        lo = "bottom" if axis == "y" else f"{axis}_bottom"
+        hi = "top" if axis == "y" else f"{axis}_top"
+        both = "double" if axis == "y" else f"{axis}_double"
+        total += shape_model(f"cobblestone_slab_layered_{lo}", [near], cobble, "cobblestone_full")
+        total += shape_model(f"cobblestone_slab_layered_{hi}", [far], cobble, "cobblestone_full")
+        total += double_model(f"cobblestone_slab_layered_{both}", cobble, "cobblestone_full",
+                              (near, far))
     print(f"cobblestone: {total} elements across 11 models")
 
     write("blockstates/cobblestone.json",
           {"variants": {"": {"model": "granularity:block/cobblestone_layered"}}})
-    write("blockstates/cobblestone_slab.json", {"variants": {
-        "type=bottom": {"model": "granularity:block/cobblestone_slab_layered_bottom"},
-        "type=top": {"model": "granularity:block/cobblestone_slab_layered_top"},
-        "type=double": {"model": "granularity:block/cobblestone_slab_layered_double"}}})
+    slab_variants = {}
+    for axis in SLAB_HALVES:
+        for kind, suffix in (("bottom", "bottom"), ("top", "top"), ("double", "double")):
+            model = suffix if axis == "y" else f"{axis}_{suffix}"
+            slab_variants[f"axis={axis},type={kind}"] = {
+                "model": f"granularity:block/cobblestone_slab_layered_{model}"}
+    write("blockstates/cobblestone_slab.json", {"variants": slab_variants})
+    print(f"  slab: {len(slab_variants)} variants across {len(SLAB_HALVES)} axes")
 
     # --- Stairs: 40 variants over 3 models, all rotation done by the blockstate ---
     variants = {}

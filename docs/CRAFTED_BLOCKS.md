@@ -334,3 +334,53 @@ One name changed as a consequence, and for the better: a style whose name is *it
 material in front of it, so flowstone went from "Flowstone Slate" to **"Slate Flowstone"** — the same
 shape as "Slate Bricks", and it now takes a colour correctly as "Red Slate Flowstone" rather than
 "Flowstone Red Slate".
+
+---
+
+## 10. Vertical slabs, for no new blocks at all
+
+The reason vanilla has never shipped these is arithmetic. Vanilla has **sixty** slab blocks and
+orientation would multiply every one of them. **We have one** — because what a slab is made of is a
+composition component and how it is worked is a finish component, and neither is a block. Orientation
+is the one thing that genuinely *is* geometry, so it goes in the blockstate, and the whole cost is a
+property.
+
+`AXIS` says which way the slab is cut; vanilla's `TYPE` is reinterpreted as **which half along that
+axis** — `BOTTOM` the negative side, `TOP` the positive, `DOUBLE` both. On `AXIS=Y` that is precisely
+what those words already meant, so **every slab in every existing world keeps working**: a saved block
+with no axis loads the default.
+
+Nine models, eighteen states, one block, one item.
+
+### Two things came free
+
+- **Two-stone vertical doubles.** The second composition, its own overlays, dye and finish were built
+  for horizontal doubles and reused for the stonecutter's two stones. "Upper" simply becomes "the far
+  half along the axis" — no new idea, no new storage.
+- **Finish textures orient correctly.** `FinishBakedModel` picks its sprite from a quad's *world*
+  direction, so a vertical Pebbled slab shows the top texture on the face that is actually facing up,
+  matching its neighbours rather than its own history.
+
+### Placement, in three rules
+
+1. **No sneak, no vertical.** An ordinary click places an ordinary slab, so nothing a player already
+   knows how to do changes.
+2. **Aiming at a slab inherits its axis *and its half*.** This is what makes a run buildable: point at
+   the last one and keep clicking. Inheriting only the axis would offset every second slab by half a
+   block.
+3. **Otherwise a sneak on a side face goes vertical**, cut along the face pointed at, so the slab hugs
+   the block it was placed against.
+
+Sneaking on a **top or bottom** face deliberately stays horizontal. That is not an omission: sneak-place
+is already vanilla's "place this instead of opening what I am pointing at", which is how a slab gets
+onto a chest, a furnace or a stonecutter — and you reach those by clicking their tops. Taking the whole
+gesture would have made every interactive block unbuildable-on.
+
+**Merging and orientation-inheritance never collide**, so neither needs a modifier: vanilla only merges
+when you click the *empty* half, which leaves every other click free to inherit. The one addition is
+that **two slabs only merge if they lie the same way** — a vertical slab and a horizontal one sharing a
+block space is not a double of anything, and without the check a careless click would silently
+reorient one of them.
+
+The player never handles a vertical slab. There is one item, it carries no axis, and every drop is an
+ordinary slab again; orientation exists only while the block is placed.
