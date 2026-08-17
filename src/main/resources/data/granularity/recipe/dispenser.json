@@ -1,0 +1,24 @@
+{
+  "type": "granularity:stoneware",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "#X#",
+    "#R#"
+  ],
+  "key": {
+    "#": {
+      "tag": "granularity:rock_chunks"
+    },
+    "X": {
+      "item": "minecraft:bow"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "granularity:dispenser",
+    "count": 1
+  }
+}

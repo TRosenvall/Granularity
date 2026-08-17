@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "granularity:block/stonecutter"
+    },
+    "facing=east": {
+      "model": "granularity:block/stonecutter",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "granularity:block/stonecutter",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "granularity:block/stonecutter",
+      "y": 270
+    }
+  }
+}

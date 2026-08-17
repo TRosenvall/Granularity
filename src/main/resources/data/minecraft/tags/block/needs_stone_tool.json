@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "granularity:ore_block",
+    "granularity:alloy_block"
+  ]
+}

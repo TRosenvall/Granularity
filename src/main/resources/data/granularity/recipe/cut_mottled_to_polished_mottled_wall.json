@@ -1,0 +1,7 @@
+{
+  "type": "granularity:stone_cut",
+  "from": "mottled",
+  "to": "polished_mottled",
+  "from_form": "wall",
+  "to_form": "wall"
+}

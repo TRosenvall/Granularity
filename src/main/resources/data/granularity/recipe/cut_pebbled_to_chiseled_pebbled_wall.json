@@ -1,0 +1,7 @@
+{
+  "type": "granularity:stone_cut",
+  "from": "pebbled",
+  "to": "chiseled_pebbled",
+  "from_form": "wall",
+  "to_form": "wall"
+}

@@ -1,0 +1,20 @@
+{
+  "replace": false,
+  "values": [
+    "granularity:alloy_block",
+    "granularity:cobblestone",
+    "granularity:cobblestone_slab",
+    "granularity:cobblestone_stairs",
+    "granularity:cobblestone_wall",
+    "granularity:dispenser",
+    "granularity:dropper",
+    "granularity:furnace",
+    "granularity:lever",
+    "granularity:natural_stone",
+    "granularity:observer",
+    "granularity:ore_block",
+    "granularity:piston",
+    "granularity:piston_head",
+    "granularity:stonecutter"
+  ]
+}

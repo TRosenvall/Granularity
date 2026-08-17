@@ -1,0 +1,168 @@
+# This is an example neoforge.mods.toml file. It contains the data relating to the loading mods.
+# There are several mandatory fields (#mandatory), and many more that are optional (#optional).
+# The overall format is standard TOML format, v0.5.0.
+# Note that there are a couple of TOML lists in this file.
+# Find more information on toml format here:  https://github.com/toml-lang/toml
+
+# The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
+modLoader="javafml" #mandatory
+
+# A version range to match for said mod loader - for regular FML @Mod it will be the FML version. This is currently 2.
+loaderVersion="${loader_version_range}" #mandatory
+
+# The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
+# Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
+license="${mod_license}"
+
+# A URL to refer people to when problems occur with this mod
+#issueTrackerURL="https://change.me.to.your.issue.tracker.example.invalid/" #optional
+
+# A list of mods - how many allowed here is determined by the individual mod loader
+[[mods]] #mandatory
+
+# The modid of the mod
+modId="${mod_id}" #mandatory
+
+# The version number of the mod
+version="${mod_version}" #mandatory
+
+# A display name for the mod
+displayName="${mod_name}" #mandatory
+
+# A URL to query for updates for this mod. See the JSON update specification https://docs.neoforged.net/docs/misc/updatechecker/
+#updateJSONURL="https://change.me.example.invalid/updates.json" #optional
+
+# A URL for the "homepage" for this mod, displayed in the mod UI
+#displayURL="https://change.me.to.your.mods.homepage.example.invalid/" #optional
+
+# A file name (in the root of the mod JAR) containing a logo for display
+#logoFile="examplemod.png" #optional
+
+# A text field displayed in the mod UI
+#credits="" #optional
+
+# The authors of the mod, displayed in the mod UI (optional)
+authors="Timothy Rosenvall"
+
+# The description text for the mod (multi line!) (#mandatory)
+description='''
+# Granularity
+
+**Break a stone block and you don't get stone. You get nine things.**
+
+Minecraft's materials are monoliths. A block of stone is *stone* — identical to every other block of stone, indivisible, and as informative about the ground it came from as a grey rectangle can be. Granularity takes that apart.
+
+Every natural block is a **composition**: nine slots holding rock chunks, ore, precious ore, gems, clay, silt, sand, water. What comes out of the ground depends on where you dug it — and the same place always gives the same answer, because composition is computed from position rather than stored. Nothing is rolled at random when you swing. The mountain already knew.
+
+The other half of the mod is that the world stops holding still.
+
+---
+
+## The ground has a map in it
+
+Sixteen colours, each with its own rock, ore, precious ore and gem. They occupy regions with organic borders, and blocks near a boundary come out genuinely mixed — five red chunks and four blue, dropped from the same block, because each of the nine slots samples the region field slightly offset from its neighbours. Gradients aren't painted on. They fall out of the geometry.
+
+Go deeper and compositions get purer: richer ore fractions, more saturated colour, less muddle. Depth is a progression axis and a prospecting one.
+
+And **bedrock is the map**. The bottom of the world renders the region field at full certainty, so standing on bedrock tells you what ore family the whole column above you belongs to. Deep travel becomes reconnaissance.
+
+## Materials that mix
+
+Nine rock chunks make a cobblestone. If the chunks are different colours, the cobblestone *shows* them — constituent rocks visible in the texture. Smelt it and the colours **average** into one.
+
+That single rule is the whole building-material system. Want a subtle gradient across a wall? Mine across a region boundary and smelt in batches. Want a specific shade? Mix it. There's no dye step and no palette to unlock — just arithmetic on what you dug.
+
+## Water that actually goes somewhere
+
+Water is nine drops. A full source block is nine; a draining one is six water and three air. Drops move between blocks and are never created or destroyed — the bookkeeping is exact integers, so a river can't leak or duplicate.
+
+Rivers are placed where drainage says they should be: rainfall exceeding infiltration, gathering downhill, merging into tributaries, ending at oceans. They are geologically correct by construction rather than drawn on afterwards.
+
+Then they move. Fast water picks sediment off the bed; slow water drops it. Nothing scripts a meander, but outer banks erode while inner banks build, so bends migrate. Deltas form at river mouths. Floodplains build up. Undercut banks collapse and feed the river the debris.
+
+## Wet, dry, and the ground in between
+
+Soil is the same nine slots — sand, silt and clay in proportion, which is the actual soil texture triangle, so loam and sandy clay and silty loam are all positions in the same space rather than separate blocks someone had to invent.
+
+Moisture lives in the slots too, invisibly. Rain infiltrates porous rock and stops at impermeable layers, so water tables perch where the geology puts them — and where an impermeable stratum outcrops on a hillside, **a spring seeps out**. No block is tagged "spring". The rock arrangement produces it.
+
+The block/fluid distinction dissolves along the way. Shoreline is six sand and three water. Mud, marsh, quicksand and wet clay are regions of composition space, not special cases someone had to write.
+
+## Your builds are exempt
+
+**Anything you place is immune to all of it.** Placed blocks never erode, never deposit, never decay. That isn't a safety rail bolted on — it's the pillar the whole thing rests on.
+
+A placed stone wall is a levee. A dug trench is a canal. A dam holds because the blocks in it are yours. Hydraulic engineering emerges from the material rules with no dedicated code, and your castle is still there when you get back.
+
+## Set the pace, or turn it off
+
+One slider governs how fast the land responds — like a volume control, and exposed as a gamerule so servers and map-makers can script it. Push it up for a dramatic timelapse. Leave it at default for rivers that show noticeable change over about ten in-game days.
+
+**Zero is a supported setting.** Geology frozen, water still flowing, all the composition and material and texture systems intact. If you want the materials without the moving world — or you need an escape hatch for compatibility — that's a first-class mode, not a broken one.
+
+---
+
+## Under the hood, briefly
+
+Two ideas carry everything.
+
+**Derive, don't store.** Natural state is computed on demand from position and a world seed. Only *deviations* from that baseline are saved, sparsely, and they decay back until they expire. Most of the world stores nothing at all, which is what makes a simulated world affordable on ordinary hardware.
+
+**Integers all the way down.** Every quantity is a whole number of drops. Nothing drifts, nothing leaks, and a flux of a third of a drop per tick is realised as one drop moved on one tick in three — exact in expectation, exactly conservative every time. Explicit-integrator blowup isn't unlikely here; it's impossible, because the quantisation *is* the limiter.
+
+The drop-migration rule is a sandpile model, which is where the name earns itself twice over. Granularity is grain size, and it's also the level at which the world is resolved — and the mathematics that makes it cheap is the same mathematics that makes drainage networks look right. The physics chosen for performance and the physics chosen for beauty turned out to be the same physics.
+
+---
+
+## Status
+
+In development. The physics is validated — a standalone prototype confirmed conservation, stability, drainage, erosion, perched water tables and springs, and calibrated the world-evolution pace. Implementation for NeoForge is under way.
+
+*Granularity is a Minecraft articulation of a longer-standing mathematical idea. The maths is load-bearing, not flavour.*
+'''
+
+# One mixin, and only one: the recipe book's click-to-fill cannot place items carrying data
+# components, and every crafted block here carries a composition. See ServerPlaceRecipeMixin.
+[[mixins]]
+config="${mod_id}.mixins.json"
+
+# The [[accessTransformers]] block allows you to declare where your AT file is.
+# If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
+#[[accessTransformers]]
+#file="META-INF/accesstransformer.cfg"
+
+# The coremods config file path is not configurable and is always loaded from META-INF/coremods.json
+
+# A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
+[[dependencies.${mod_id}]] #optional
+    # the modid of the dependency
+    modId="neoforge" #mandatory
+    # The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
+    # 'required' requires the mod to exist, 'optional' does not
+    # 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
+    type="required" #mandatory
+    # Optional field describing why the dependency is required or why it is incompatible
+    # reason="..."
+    # The version range of the dependency
+    versionRange="[${neo_version},)" #mandatory
+    # An ordering relationship for the dependency.
+    # BEFORE - This mod is loaded BEFORE the dependency
+    # AFTER - This mod is loaded AFTER the dependency
+    ordering="NONE"
+    # Side this dependency is applied on - BOTH, CLIENT, or SERVER
+    side="BOTH"
+
+# Here's another dependency
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    # This version range declares a minimum of the current minecraft version up to but not including the next major version
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# Features are specific properties of the game environment, that you may want to declare you require. This example declares
+# that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
+# stop your mod loading on the server for example.
+#[features.${mod_id}]
+#openGLVersion="[3.2,)"

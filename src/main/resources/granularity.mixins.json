@@ -1,0 +1,22 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.tarosie.granularity.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "FallingBlockEntityMixin",
+    "OreVeinifierMixin",
+    "PistonBaseBlockHeadMixin",
+    "PistonBaseBlockMixin",
+    "PistonHeadBlockMixin",
+    "ServerPlaceRecipeMixin",
+    "StonecutterMenuMixin"
+  ],
+  "client": [
+    "ClientHooksMixin",
+    "PistonHeadRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

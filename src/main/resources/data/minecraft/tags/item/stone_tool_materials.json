@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "granularity:andesite_chunk",
+    "granularity:basalt_chunk",
+    "granularity:chalk_chunk",
+    "granularity:conglomerate_chunk",
+    "granularity:diorite_chunk",
+    "granularity:gabbro_chunk",
+    "granularity:gneiss_chunk",
+    "granularity:granite_chunk",
+    "granularity:limestone_chunk",
+    "granularity:marble_chunk",
+    "granularity:mudstone_chunk",
+    "granularity:quartzite_chunk",
+    "granularity:sandstone_chunk",
+    "granularity:schist_chunk",
+    "granularity:shale_chunk",
+    "granularity:slate_chunk"
+  ]
+}

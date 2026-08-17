@@ -1,0 +1,27 @@
+{
+  "type": "granularity:stoneware",
+  "category": "misc",
+  "pattern": [
+    "TTT",
+    "#X#",
+    "#R#"
+  ],
+  "key": {
+    "T": {
+      "tag": "minecraft:planks"
+    },
+    "#": {
+      "tag": "granularity:rock_chunks"
+    },
+    "X": {
+      "tag": "c:ingots"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "granularity:piston",
+    "count": 1
+  }
+}

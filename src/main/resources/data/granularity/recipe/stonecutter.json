@@ -1,0 +1,24 @@
+{
+  "type": "granularity:worked_stoneware",
+  "category": "misc",
+  "pattern": [
+    " B ",
+    "#L#"
+  ],
+  "key": {
+    "B": {
+      "tag": "c:ingots"
+    },
+    "L": {
+      "tag": "minecraft:logs"
+    },
+    "#": {
+      "item": "granularity:cobblestone"
+    }
+  },
+  "finish": "smooth",
+  "result": {
+    "id": "granularity:stonecutter",
+    "count": 1
+  }
+}

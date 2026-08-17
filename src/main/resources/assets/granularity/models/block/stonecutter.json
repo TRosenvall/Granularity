@@ -1,0 +1,255 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "particle": "granularity:block/stonecutter_bottom_tint",
+    "stonecutter_side_lower": "granularity:block/stonecutter_side_lower",
+    "stonecutter_bottom_tint": "granularity:block/stonecutter_bottom_tint",
+    "stonecutter_side_upper": "granularity:block/stonecutter_side_upper",
+    "stonecutter_top_stone": "granularity:block/stonecutter_top_stone",
+    "stonecutter_side_wood": "granularity:block/stonecutter_side_wood",
+    "stonecutter_top_wood": "granularity:block/stonecutter_top_wood",
+    "stonecutter_saw": "minecraft:block/stonecutter_saw"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        9,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stonecutter_side_lower",
+          "tintindex": 0,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#stonecutter_side_lower",
+          "tintindex": 0,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#stonecutter_side_lower",
+          "tintindex": 0,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#stonecutter_side_lower",
+          "tintindex": 0,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "east"
+        },
+        "down": {
+          "texture": "#stonecutter_bottom_tint",
+          "tintindex": 0,
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        9,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stonecutter_side_upper",
+          "tintindex": 10,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#stonecutter_side_upper",
+          "tintindex": 10,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#stonecutter_side_upper",
+          "tintindex": 10,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#stonecutter_side_upper",
+          "tintindex": 10,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "east"
+        },
+        "up": {
+          "texture": "#stonecutter_top_stone",
+          "tintindex": 10,
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        9,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stonecutter_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#stonecutter_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#stonecutter_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#stonecutter_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            7,
+            16,
+            16
+          ],
+          "cullface": "east"
+        },
+        "up": {
+          "texture": "#stonecutter_top_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        1,
+        9,
+        8
+      ],
+      "to": [
+        15,
+        16,
+        8
+      ],
+      "faces": {
+        "north": {
+          "texture": "#stonecutter_saw",
+          "tintindex": 21,
+          "uv": [
+            1,
+            9,
+            15,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#stonecutter_saw",
+          "tintindex": 21,
+          "uv": [
+            15,
+            9,
+            1,
+            16
+          ]
+        }
+      }
+    }
+  ]
+}

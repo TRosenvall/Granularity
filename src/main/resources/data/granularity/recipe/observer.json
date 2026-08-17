@@ -1,0 +1,24 @@
+{
+  "type": "granularity:stoneware",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "RRQ",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "tag": "granularity:rock_chunks"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    },
+    "Q": {
+      "item": "minecraft:quartz"
+    }
+  },
+  "result": {
+    "id": "granularity:observer",
+    "count": 1
+  }
+}

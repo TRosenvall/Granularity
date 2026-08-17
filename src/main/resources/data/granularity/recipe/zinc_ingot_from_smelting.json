@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "granularity:raw_zinc"
+  },
+  "result": {
+    "id": "granularity:zinc_ingot"
+  },
+  "experience": 0.7,
+  "cookingtime": 200
+}

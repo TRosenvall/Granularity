@@ -1,0 +1,54 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "all": "granularity:block/precious_overlay_b_8",
+    "particle": "granularity:block/stone_base"
+  },
+  "elements": [
+    {
+      "from": [
+        -0.01,
+        -0.01,
+        -0.01
+      ],
+      "to": [
+        16.01,
+        16.01,
+        16.01
+      ],
+      "faces": {
+        "down": {
+          "texture": "#all",
+          "cullface": "down",
+          "tintindex": 4
+        },
+        "up": {
+          "texture": "#all",
+          "cullface": "up",
+          "tintindex": 4
+        },
+        "north": {
+          "texture": "#all",
+          "cullface": "north",
+          "tintindex": 4
+        },
+        "south": {
+          "texture": "#all",
+          "cullface": "south",
+          "tintindex": 4
+        },
+        "west": {
+          "texture": "#all",
+          "cullface": "west",
+          "tintindex": 4
+        },
+        "east": {
+          "texture": "#all",
+          "cullface": "east",
+          "tintindex": 4
+        }
+      }
+    }
+  ]
+}

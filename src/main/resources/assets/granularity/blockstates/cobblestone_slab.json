@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "granularity:block/cobblestone_slab_layered_bottom"
+    },
+    "type=top": {
+      "model": "granularity:block/cobblestone_slab_layered_top"
+    },
+    "type=double": {
+      "model": "granularity:block/cobblestone_slab_layered_double"
+    }
+  }
+}

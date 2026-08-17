@@ -1,0 +1,49 @@
+### Gradle ###
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/**/build/
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/**/out/
+
+.run/
+
+### Eclipse ###
+.apt_generated
+.classpath
+.eclipse/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/**/bin/
+
+### VS Code ###
+.vscode/
+
+### Mac OS ###
+.DS_Store
+
+### Minecraft Modding ###
+run/
+!**/src/**/run/
+**/src/generated/**/.cache/
+repo/
+!**/src/**/repo/
+
+### Granularity ###
+# Gradle's own logs at the repo root, and Python bytecode from tools/.
+logs/
+__pycache__/
+*.pyc
+# toy_geology_model is its own git repository (the design notes and prototype findings).
+# Left out deliberately: reverting work in this repo should never touch it.
+toy_geology_model/

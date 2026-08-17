@@ -1,0 +1,26 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "granularity:block/dropper"
+    },
+    "facing=east": {
+      "model": "granularity:block/dropper",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "granularity:block/dropper",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "granularity:block/dropper",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "granularity:block/dropper_vertical"
+    },
+    "facing=down": {
+      "model": "granularity:block/dropper_vertical",
+      "x": 180
+    }
+  }
+}

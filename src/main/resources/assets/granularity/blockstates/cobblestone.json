@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "granularity:block/cobblestone_layered"
+    }
+  }
+}

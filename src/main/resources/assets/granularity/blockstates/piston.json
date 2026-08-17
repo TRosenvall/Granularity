@@ -1,0 +1,50 @@
+{
+  "variants": {
+    "extended=false,facing=north": {
+      "model": "granularity:block/piston"
+    },
+    "extended=true,facing=north": {
+      "model": "granularity:block/piston_base"
+    },
+    "extended=false,facing=east": {
+      "model": "granularity:block/piston",
+      "y": 90
+    },
+    "extended=true,facing=east": {
+      "model": "granularity:block/piston_base",
+      "y": 90
+    },
+    "extended=false,facing=south": {
+      "model": "granularity:block/piston",
+      "y": 180
+    },
+    "extended=true,facing=south": {
+      "model": "granularity:block/piston_base",
+      "y": 180
+    },
+    "extended=false,facing=west": {
+      "model": "granularity:block/piston",
+      "y": 270
+    },
+    "extended=true,facing=west": {
+      "model": "granularity:block/piston_base",
+      "y": 270
+    },
+    "extended=false,facing=up": {
+      "model": "granularity:block/piston",
+      "x": 270
+    },
+    "extended=true,facing=up": {
+      "model": "granularity:block/piston_base",
+      "x": 270
+    },
+    "extended=false,facing=down": {
+      "model": "granularity:block/piston",
+      "x": 90
+    },
+    "extended=true,facing=down": {
+      "model": "granularity:block/piston_base",
+      "x": 90
+    }
+  }
+}

@@ -1,0 +1,464 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "particle": "granularity:block/piston_side_base",
+    "piston_back_base": "granularity:block/piston_back_base",
+    "piston_side_base": "granularity:block/piston_side_base",
+    "piston_top_wood": "granularity:block/piston_top_wood",
+    "piston_side_wood": "granularity:block/piston_side_wood",
+    "piston_top_metal": "granularity:block/piston_top_metal",
+    "piston_side_metal": "granularity:block/piston_side_metal",
+    "piston_back_shape_1": "granularity:block/piston_back_shape_1",
+    "piston_side_shape_1": "granularity:block/piston_side_shape_1",
+    "piston_back_shape_2": "granularity:block/piston_back_shape_2",
+    "piston_side_shape_2": "granularity:block/piston_side_shape_2",
+    "piston_back_shape_3": "granularity:block/piston_back_shape_3",
+    "piston_side_shape_3": "granularity:block/piston_side_shape_3",
+    "piston_back_shape_4": "granularity:block/piston_back_shape_4",
+    "piston_side_shape_4": "granularity:block/piston_side_shape_4"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        12,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#piston_back_base",
+          "tintindex": 0,
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#piston_side_base",
+          "tintindex": 0,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_base",
+          "tintindex": 0,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_base",
+          "tintindex": 0,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_base",
+          "tintindex": 0,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        12,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "up": {
+          "texture": "#piston_top_wood",
+          "tintindex": 20,
+          "cullface": "up"
+        },
+        "north": {
+          "texture": "#piston_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_wood",
+          "tintindex": 20,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        12,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "up": {
+          "texture": "#piston_top_metal",
+          "tintindex": 21,
+          "cullface": "up"
+        },
+        "north": {
+          "texture": "#piston_side_metal",
+          "tintindex": 21,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_metal",
+          "tintindex": 21,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_metal",
+          "tintindex": 21,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_metal",
+          "tintindex": 21,
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        12,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#piston_back_shape_1",
+          "tintindex": 1,
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#piston_side_shape_1",
+          "tintindex": 1,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_shape_1",
+          "tintindex": 1,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_shape_1",
+          "tintindex": 1,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_shape_1",
+          "tintindex": 1,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        12,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#piston_back_shape_2",
+          "tintindex": 2,
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#piston_side_shape_2",
+          "tintindex": 2,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_shape_2",
+          "tintindex": 2,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_shape_2",
+          "tintindex": 2,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_shape_2",
+          "tintindex": 2,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        12,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#piston_back_shape_3",
+          "tintindex": 3,
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#piston_side_shape_3",
+          "tintindex": 3,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_shape_3",
+          "tintindex": 3,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_shape_3",
+          "tintindex": 3,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_shape_3",
+          "tintindex": 3,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "east"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        12,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#piston_back_shape_4",
+          "tintindex": 4,
+          "cullface": "down"
+        },
+        "north": {
+          "texture": "#piston_side_shape_4",
+          "tintindex": 4,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "north"
+        },
+        "south": {
+          "texture": "#piston_side_shape_4",
+          "tintindex": 4,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "south"
+        },
+        "west": {
+          "texture": "#piston_side_shape_4",
+          "tintindex": 4,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "west"
+        },
+        "east": {
+          "texture": "#piston_side_shape_4",
+          "tintindex": 4,
+          "uv": [
+            0,
+            4,
+            16,
+            16
+          ],
+          "cullface": "east"
+        }
+      }
+    }
+  ]
+}

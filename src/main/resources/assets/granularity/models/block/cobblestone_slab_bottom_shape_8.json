@@ -1,0 +1,49 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "all": "granularity:block/cobblestone_shape_8",
+    "particle": "granularity:block/cobblestone_full"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        8,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#all",
+          "tintindex": 8,
+          "cullface": "down"
+        },
+        "up": {
+          "texture": "#all",
+          "tintindex": 8
+        },
+        "north": {
+          "texture": "#all",
+          "tintindex": 8
+        },
+        "south": {
+          "texture": "#all",
+          "tintindex": 8
+        },
+        "west": {
+          "texture": "#all",
+          "tintindex": 8
+        },
+        "east": {
+          "texture": "#all",
+          "tintindex": 8
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "type": "granularity:stoneware",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "# #",
+    "###"
+  ],
+  "key": {
+    "#": {
+      "tag": "granularity:rock_chunks"
+    }
+  },
+  "result": {
+    "id": "granularity:furnace",
+    "count": 1
+  }
+}

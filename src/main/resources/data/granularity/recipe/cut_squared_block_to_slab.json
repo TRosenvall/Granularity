@@ -1,0 +1,8 @@
+{
+  "type": "granularity:stone_cut",
+  "from_form": "block",
+  "from": "squared",
+  "to_form": "slab",
+  "to": "squared",
+  "count": 2
+}

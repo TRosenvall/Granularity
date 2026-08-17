@@ -1,0 +1,7 @@
+{
+  "type": "granularity:stone_cut",
+  "from": "mottled",
+  "to": "chiseled_mottled",
+  "from_form": "slab",
+  "to_form": "slab"
+}

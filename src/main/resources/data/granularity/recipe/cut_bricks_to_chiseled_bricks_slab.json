@@ -1,0 +1,7 @@
+{
+  "type": "granularity:stone_cut",
+  "from": "bricks",
+  "to": "chiseled_bricks",
+  "from_form": "slab",
+  "to_form": "slab"
+}

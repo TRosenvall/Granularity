@@ -1,0 +1,54 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "all": "granularity:block/ore_overlay_8",
+    "particle": "granularity:block/stone_base"
+  },
+  "elements": [
+    {
+      "from": [
+        -0.01,
+        -0.01,
+        -0.01
+      ],
+      "to": [
+        16.01,
+        16.01,
+        16.01
+      ],
+      "faces": {
+        "down": {
+          "texture": "#all",
+          "cullface": "down",
+          "tintindex": 1
+        },
+        "up": {
+          "texture": "#all",
+          "cullface": "up",
+          "tintindex": 1
+        },
+        "north": {
+          "texture": "#all",
+          "cullface": "north",
+          "tintindex": 1
+        },
+        "south": {
+          "texture": "#all",
+          "cullface": "south",
+          "tintindex": 1
+        },
+        "west": {
+          "texture": "#all",
+          "cullface": "west",
+          "tintindex": 1
+        },
+        "east": {
+          "texture": "#all",
+          "cullface": "east",
+          "tintindex": 1
+        }
+      }
+    }
+  ]
+}

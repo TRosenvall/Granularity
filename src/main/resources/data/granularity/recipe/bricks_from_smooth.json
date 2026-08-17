@@ -1,0 +1,19 @@
+{
+  "type": "granularity:apply_style",
+  "category": "building",
+  "pattern": [
+    "##",
+    "##"
+  ],
+  "key": {
+    "#": {
+      "item": "granularity:cobblestone"
+    }
+  },
+  "from": "smooth",
+  "to": "bricks",
+  "result": {
+    "id": "granularity:cobblestone",
+    "count": 4
+  }
+}

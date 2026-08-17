@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_the_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "granularity:piston"
+      }
+    },
+    "has_chunks": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#granularity:rock_chunks"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_chunks",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "granularity:piston"
+    ]
+  }
+}

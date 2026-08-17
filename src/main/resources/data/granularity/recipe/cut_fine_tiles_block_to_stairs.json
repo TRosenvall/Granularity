@@ -1,0 +1,8 @@
+{
+  "type": "granularity:stone_cut",
+  "from_form": "block",
+  "from": "fine_tiles",
+  "to_form": "stairs",
+  "to": "fine_tiles",
+  "count": 1
+}

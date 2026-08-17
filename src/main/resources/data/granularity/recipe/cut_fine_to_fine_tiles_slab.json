@@ -1,0 +1,7 @@
+{
+  "type": "granularity:stone_cut",
+  "from": "fine",
+  "to": "fine_tiles",
+  "from_form": "slab",
+  "to_form": "slab"
+}

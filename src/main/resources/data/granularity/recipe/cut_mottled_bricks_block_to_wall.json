@@ -1,0 +1,8 @@
+{
+  "type": "granularity:stone_cut",
+  "from_form": "block",
+  "from": "mottled_bricks",
+  "to_form": "wall",
+  "to": "mottled_bricks",
+  "count": 1
+}

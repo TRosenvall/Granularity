@@ -1,0 +1,441 @@
+{
+  "_comment": "Pinned output of the composition function. A diff is a world-breaking change, not a test to update. Regenerate with ./gradlew test -PregenerateCompositionGolden.",
+  "salt_seed": 24301,
+  "salt": "6572cc5f933c2ed4",
+  "region_size": 384.0,
+  "grain_count": 37,
+  "stone_field": [
+    {
+      "x": 0,
+      "z": 0,
+      "stone": "granularity:shale",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 192,
+      "z": 0,
+      "stone": "granularity:mudstone",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 384,
+      "z": 0,
+      "stone": "granularity:calcite",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 576,
+      "z": 0,
+      "stone": "granularity:calcite",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 768,
+      "z": 0,
+      "stone": "granularity:chalk",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 0,
+      "z": 384,
+      "stone": "granularity:sandstone",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": -384,
+      "z": 0,
+      "stone": "granularity:andesite",
+      "family": "IGNEOUS"
+    },
+    {
+      "x": -384,
+      "z": -384,
+      "stone": "granularity:mudstone",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 1536,
+      "z": 1536,
+      "stone": "granularity:slate",
+      "family": "METAMORPHIC"
+    },
+    {
+      "x": -2048,
+      "z": 4096,
+      "stone": "granularity:shale",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 100000,
+      "z": -100000,
+      "stone": "granularity:chalk",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 7,
+      "z": 13,
+      "stone": "granularity:mudstone",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": -7,
+      "z": -13,
+      "stone": "granularity:shale",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 4096,
+      "z": 0,
+      "stone": "granularity:chalk",
+      "family": "SEDIMENTARY"
+    },
+    {
+      "x": 0,
+      "z": -4096,
+      "stone": "granularity:quartzite",
+      "family": "METAMORPHIC"
+    }
+  ],
+  "compositions": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "slots": [
+        15,
+        14,
+        14,
+        14,
+        15,
+        14,
+        15,
+        14,
+        14
+      ],
+      "describe": "Composition[granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:shale, granularity:mudstone, granularity:shale, granularity:shale]"
+    },
+    {
+      "x": 0,
+      "y": 64,
+      "z": 0,
+      "slots": [
+        14,
+        14,
+        15,
+        14,
+        14,
+        14,
+        14,
+        15,
+        15
+      ],
+      "describe": "Composition[granularity:shale, granularity:shale, granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:mudstone]"
+    },
+    {
+      "x": 0,
+      "y": -64,
+      "z": 0,
+      "slots": [
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14
+      ],
+      "describe": "Composition[granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale]"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 1,
+      "slots": [
+        15,
+        15,
+        15,
+        15,
+        14,
+        14,
+        14,
+        15,
+        14
+      ],
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:shale]"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": -1,
+      "slots": [
+        15,
+        15,
+        15,
+        14,
+        14,
+        14,
+        15,
+        14,
+        15
+      ],
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:shale, granularity:mudstone]"
+    },
+    {
+      "x": 127,
+      "y": 32,
+      "z": -415,
+      "slots": [
+        12,
+        12,
+        17,
+        12,
+        17,
+        17,
+        13,
+        13,
+        13
+      ],
+      "describe": "Composition[granularity:sandstone, granularity:sandstone, granularity:conglomerate, granularity:sandstone, granularity:conglomerate, granularity:conglomerate, granularity:limestone, granularity:limestone, granularity:limestone]"
+    },
+    {
+      "x": -2048,
+      "y": -32,
+      "z": 4096,
+      "slots": [
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14
+      ],
+      "describe": "Composition[granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale]"
+    },
+    {
+      "x": 30000,
+      "y": 12,
+      "z": -30000,
+      "slots": [
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        21,
+        17
+      ],
+      "describe": "Composition[granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:coal, granularity:conglomerate]"
+    },
+    {
+      "x": 512,
+      "y": -63,
+      "z": 512,
+      "slots": [
+        12,
+        18,
+        18,
+        12,
+        18,
+        18,
+        12,
+        12,
+        12
+      ],
+      "describe": "Composition[granularity:sandstone, granularity:iron, granularity:iron, granularity:sandstone, granularity:iron, granularity:iron, granularity:sandstone, granularity:sandstone, granularity:sandstone]"
+    },
+    {
+      "x": -777,
+      "y": 63,
+      "z": 1313,
+      "slots": [
+        36,
+        36,
+        36,
+        36,
+        36,
+        36,
+        36,
+        36,
+        36
+      ],
+      "describe": "Composition[granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite]"
+    },
+    {
+      "x": 384,
+      "y": 0,
+      "z": 384,
+      "slots": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "describe": "Composition[granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone]"
+    },
+    {
+      "x": 385,
+      "y": 0,
+      "z": 384,
+      "slots": [
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12,
+        12
+      ],
+      "describe": "Composition[granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:sandstone]"
+    },
+    {
+      "x": 1152,
+      "y": -16,
+      "z": -1152,
+      "slots": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone]"
+    },
+    {
+      "x": 64,
+      "y": -64,
+      "z": 64,
+      "slots": [
+        20,
+        15,
+        15,
+        15,
+        20,
+        15,
+        15,
+        15,
+        15
+      ],
+      "describe": "Composition[granularity:zinc, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:zinc, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone]"
+    },
+    {
+      "x": -64,
+      "y": -64,
+      "z": -64,
+      "slots": [
+        18,
+        12,
+        12,
+        12,
+        18,
+        18,
+        12,
+        12,
+        12
+      ],
+      "describe": "Composition[granularity:iron, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:iron, granularity:iron, granularity:sandstone, granularity:sandstone, granularity:sandstone]"
+    },
+    {
+      "x": 9001,
+      "y": 100,
+      "z": 9001,
+      "slots": [
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14,
+        14
+      ],
+      "describe": "Composition[granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale]"
+    },
+    {
+      "x": -12345,
+      "y": -48,
+      "z": 6789,
+      "slots": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        18
+      ],
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:iron]"
+    },
+    {
+      "x": 256,
+      "y": 20,
+      "z": 256,
+      "slots": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone]"
+    },
+    {
+      "x": 8,
+      "y": -8,
+      "z": 8,
+      "slots": [
+        20,
+        14,
+        15,
+        15,
+        14,
+        15,
+        15,
+        15,
+        15
+      ],
+      "describe": "Composition[granularity:zinc, granularity:shale, granularity:mudstone, granularity:mudstone, granularity:shale, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone]"
+    },
+    {
+      "x": 2047,
+      "y": 0,
+      "z": -2047,
+      "slots": [
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16,
+        16
+      ],
+      "describe": "Composition[granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk]"
+    }
+  ]
+}

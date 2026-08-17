@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "granularity:block/alloy_block"
+    }
+  }
+}

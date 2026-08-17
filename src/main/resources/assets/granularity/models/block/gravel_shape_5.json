@@ -1,0 +1,54 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout_mipped",
+  "textures": {
+    "all": "granularity:block/gravel_shape_5",
+    "particle": "granularity:block/gravel_full"
+  },
+  "elements": [
+    {
+      "from": [
+        -0.0,
+        -0.0,
+        -0.0
+      ],
+      "to": [
+        16.0,
+        16.0,
+        16.0
+      ],
+      "faces": {
+        "down": {
+          "texture": "#all",
+          "cullface": "down",
+          "tintindex": 5
+        },
+        "up": {
+          "texture": "#all",
+          "cullface": "up",
+          "tintindex": 5
+        },
+        "north": {
+          "texture": "#all",
+          "cullface": "north",
+          "tintindex": 5
+        },
+        "south": {
+          "texture": "#all",
+          "cullface": "south",
+          "tintindex": 5
+        },
+        "west": {
+          "texture": "#all",
+          "cullface": "west",
+          "tintindex": 5
+        },
+        "east": {
+          "texture": "#all",
+          "cullface": "east",
+          "tintindex": 5
+        }
+      }
+    }
+  ]
+}
