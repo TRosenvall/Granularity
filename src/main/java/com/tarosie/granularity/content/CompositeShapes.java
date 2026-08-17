@@ -160,15 +160,24 @@ public final class CompositeShapes {
             ItemStack stack, net.minecraft.world.level.block.state.BlockState state, Level level,
             BlockPos pos, net.minecraft.world.entity.player.Player player,
             net.minecraft.world.phys.BlockHitResult hit) {
-        // Scraping comes before the sneak gate, because stripping a log with an axe needs no sneak
-        // and this is the same gesture. It passes when the face is already bare, so a sword in hand
-        // still opens a clean furnace and only scrapes a dirty one.
-        if (stack.is(net.minecraft.tags.ItemTags.SWORDS)) {
-            net.minecraft.world.ItemInteractionResult scraped =
-                    scrape(stack, state, level, pos, player, hit);
-            if (scraped != net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
-                return scraped;
+        // Brushing comes before the sneak gate, because stripping a log with an axe needs no sneak
+        // and this is the same gesture. It passes when the face is already bare, so a brush in hand
+        // still opens a clean furnace and only cleans a dirty one.
+        //
+        // This does not clean the face — it starts *brushing* it, and BrushCleaning finishes the job a
+        // second later. Taking the click here rather than letting it fall through is what makes that
+        // possible at all: a block's own useWithoutItem runs before the item's useOn, so left alone a
+        // brush aimed at a mossy furnace would open the furnace and never brush anything.
+        if (stack.is(net.minecraft.world.item.Items.BRUSH)
+                && coated(level, pos, state, hit.getDirection(), hit.getLocation())) {
+            if (!player.isUsingItem()) {
+                player.startUsingItem(player.getMainHandItem() == stack
+                        ? net.minecraft.world.InteractionHand.MAIN_HAND
+                        : net.minecraft.world.InteractionHand.OFF_HAND);
             }
+            // CONSUME, as BrushItem's own useOn returns: the animation is the feedback, so an arm
+            // swing on top of it would be one motion too many.
+            return net.minecraft.world.ItemInteractionResult.CONSUME;
         }
         if (!player.isShiftKeyDown()) {
             return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -234,36 +243,65 @@ public final class CompositeShapes {
     }
 
     /**
-     * Scrapes one face clean with the edge of a blade.
+     * Brushes one face clean.
      *
      * <p>Modelled on stripping a log: no sneak, one swing, a little wear on the tool. The face is the
      * one clicked, so clearing a whole block is six swings — the same asymmetry growing it has, and
      * the reason a mossed-over furnace is a thing you have to deal with rather than a thing you undo.
      *
-     * <p>Keyed on the {@code swords} tag rather than {@code SwordItem}, so another mod's blade works.
+     * <h2>Why the brush and not a sword</h2>
+     * A blade did this first, on the strength of the stripping-a-log gesture, and it was wrong twice
+     * over. A sword is the one tool a player is holding for a reason that has nothing to do with
+     * housekeeping, so brushing moss off a wall meant putting your weapon away afterwards — and it
+     * quietly made every sword a cleaning implement, which is a claim about swords the mod had no
+     * business making. The brush already means "take the covering off this and leave what is
+     * underneath", which is exactly the verb here.
+     *
+     * <p>Keyed on the item rather than a tag because there is no {@code c:tools/brushes} convention to
+     * key on; vanilla ships one brush. If another mod adds one, this is the line to widen, and a tag
+     * is the way to widen it.
+     *
+     * <p>Vanilla's own {@code BrushItem.useOn} never runs on these blocks: a block's {@code useItemOn}
+     * is offered the click first, and returning anything but a pass stops the item ever seeing it. So
+     * there is no competition with brushing suspicious sand — the two simply never meet.
      */
-    private static net.minecraft.world.ItemInteractionResult scrape(
-            ItemStack stack, net.minecraft.world.level.block.state.BlockState state, Level level,
-            BlockPos pos, net.minecraft.world.entity.player.Player player,
-            net.minecraft.world.phys.BlockHitResult hit) {
+    public static boolean strip(Level level, BlockPos pos,
+                                net.minecraft.world.level.block.state.BlockState state,
+                                net.minecraft.world.entity.player.Player player,
+                                net.minecraft.core.Direction face,
+                                net.minecraft.world.phys.Vec3 at) {
         if (!(level.getBlockEntity(pos) instanceof CompositionHolder composite)) {
-            return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return false;
         }
-        boolean upper = Moss.upperHalfAt(state, pos, hit.getLocation());
-        Coating bare = (upper ? composite.upperOverlays() : composite.overlays())
-                .without(hit.getDirection());
+        boolean upper = Moss.upperHalfAt(state, pos, at);
+        Coating bare = (upper ? composite.upperOverlays() : composite.overlays()).without(face);
         if (bare == null) {
-            return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return false;
         }
         if (!level.isClientSide) {
             composite.setOverlays(upper, bare);
-            stack.hurtAndBreak(1, player, player.getMainHandItem() == stack
-                    ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
-                    : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
         }
         level.playSound(player, pos, net.minecraft.sounds.SoundEvents.MOSS_BREAK,
                 net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 0.9F + level.random.nextFloat() * 0.2F);
-        return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+        return true;
+    }
+
+    /**
+     * Whether that face has anything on it, asked without taking it off.
+     *
+     * <p>Needed separately because brushing is now two moments rather than one: the click decides
+     * whether there is anything worth brushing, and a second later the brush finishes the job. Both
+     * ask this, so they cannot disagree about which face or which half of a double slab.
+     */
+    public static boolean coated(Level level, BlockPos pos,
+                                 net.minecraft.world.level.block.state.BlockState state,
+                                 net.minecraft.core.Direction face,
+                                 net.minecraft.world.phys.Vec3 at) {
+        if (!(level.getBlockEntity(pos) instanceof CompositionHolder composite)) {
+            return false;
+        }
+        boolean upper = Moss.upperHalfAt(state, pos, at);
+        return (upper ? composite.upperOverlays() : composite.overlays()).without(face) != null;
     }
 
     public static void placed(Level level, BlockPos pos, ItemStack stack) {

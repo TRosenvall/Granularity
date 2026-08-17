@@ -140,6 +140,39 @@ If dyeing in bulk turns out tedious, a brush that holds charges, or a crafting-g
 a block's item form the way vanilla dyes a shulker, can be added later *on top* of this without
 changing what dyeing means.
 
+### Clearing a face: hold a brush against it
+
+**Hold a brush on a coated face and it comes clean after twenty ticks.** One face per go, one point of
+brush wear, no sneak — the same asymmetry growing it has, and the reason a mossed-over furnace is
+something you deal with rather than something you undo.
+
+**Why the brush and not a sword.** A blade did it first, on the strength of the stripping-a-log
+gesture, and it was wrong twice over: a sword is the one tool a player holds for a reason that has
+nothing to do with housekeeping, so cleaning a wall meant putting your weapon away afterwards — and it
+quietly made every sword a cleaning implement, a claim about swords this mod had no business making.
+A brush already means "take the covering off and leave what is underneath", which is the verb exactly.
+
+**Why the gesture and not just the item.** An instant click with a brush was worse than an instant
+click with a sword, for a reason worth keeping: a sword *is* an instant-swing tool, so an instant
+result reads correctly, whereas everyone who has met vanilla's brush has met it as something you
+*hold*. The right tool doing the wrong motion is uncannier than the wrong tool.
+
+Almost all of it is vanilla's. `BrushItem.onUseTick` already spawns dust for **any** block and plays
+`BRUSH_GENERIC` for anything that is not suspicious sand, on a ten-tick beat, and already releases the
+item when the player stops looking at a block. Starting the use buys all of that; only the ending had
+to be written. Twenty ticks lands just after the second stroke rather than cutting one short.
+
+Taking the click in `CompositeShapes.interact` rather than letting it fall through to `BrushItem` is
+what makes any of it possible: a block's own `useWithoutItem` runs *before* the item's `useOn`, so a
+brush aimed at a mossy furnace would otherwise open the furnace and never brush anything. A brush on a
+*clean* furnace still opens it, which is the behaviour worth keeping.
+
+**This is the safe version of a mechanic that failed once.** Wearing moss off by *mining* was tried and
+reverted: it fought the client's block-break prediction, which destroys the client's block entity
+before the server has any say, so a cancelled break left the block drawing as plain cobblestone. A
+**use** has no such prediction — nothing is destroyed, nothing is predicted, and the only thing that
+changes is a coating the server syncs the ordinary way.
+
 ### The constraint that matters more than the mechanism
 
 **Dye only ever touches the matrix, never the nine stones.** That is already how it is built, and it
@@ -255,12 +288,12 @@ Three things had to agree, and one rule decides all three:
   geometry, which is what lets it sit outside `OverlayBakedModel` and ignore the moss quads — they are
   drawn with a moss sprite — and what stops it breaking the day a second metal part appears.
 
-Scrape the moss off with a sword and it works again. Nothing here is permanent — but you have to be
-able to *reach* the blade to do it, which took one more change.
+Brush the moss off and it works again. Nothing here is permanent — but you have to be able to *reach*
+the blade to do it, which took one more change.
 
 **The blade is part of the outline now.** Vanilla's stonecutter outline is the bench alone, because
 vanilla's blade is decoration; ours is a working part that moss can jam, so a player who can see moss
-on the blade should be able to put a sword to the blade rather than hunting for the right patch of
+on the blade should be able to put a brush to the blade rather than hunting for the right patch of
 bench. The model draws the saw as a zero-thickness plane, which is fine to look at and impossible to
 point at, so the shape gives it one pixel either side.
 

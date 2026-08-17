@@ -27,6 +27,7 @@ public final class GranularityInteractions {
 
     public static void register(IEventBus modEventBus) {
         NeoForge.EVENT_BUS.addListener(GranularityInteractions::onRightClickBlock);
+        BrushCleaning.register();
         modEventBus.addListener(GranularityInteractions::registerCauldron);
     }
 

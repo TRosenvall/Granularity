@@ -44,7 +44,7 @@ public class StonecutterMenuMixin {
      * Also the place a jammed blade closes a menu that is already open.
      *
      * <p>{@code CompositeStonecutterBlock.getMenuProvider} refuses to open one, but moss can arrive
-     * while the screen is up — another player, or a sword put away mid-use — and a menu that went on
+     * while the screen is up — another player, or a brush put away mid-use — and a menu that went on
      * working would contradict the blade that had visibly stopped. Answering "no longer valid" is
      * exactly the vanilla mechanism for a container whose block is gone, used here for a container
      * whose block has jammed.

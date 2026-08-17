@@ -18,19 +18,21 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A stonecutter built from worked stone and a metal bar, and coloured by both.
  *
- * <h2>Two materials, which is the point of it</h2>
- * The bench takes the averaged colour of the three blocks that went into it and the blade takes the
- * colour of the bar, so a slate bench with a copper blade is a thing you can build and then see. That
- * is {@code METAL_TINT} doing the same job it already does for a piston's fittings — see
- * {@link com.tarosie.granularity.client.CompositeBlockColour}.
+ * <h2>Four materials, which is the point of it</h2>
+ * One per slot of the recipe — {@code " B "} over {@code "#L#"}. The bar becomes the saw blade
+ * ({@code METAL_TINT}), the log becomes the frame ({@code WOOD_TINT}), and the <b>two</b> stones are
+ * drawn separately: the left one is the bench below the wooden rail, the right one the strip above it
+ * and the working surface on top. So a slate bench with a marble top and a copper blade is a thing you
+ * can build and then see. See {@link com.tarosie.granularity.client.CompositeBlockColour}, and
+ * {@code docs/CRAFTED_BLOCKS.md} §9 for why the second stone reuses the double slab's tint range.
  *
  * <h2>Why it shows no grains</h2>
  * Every other block in this family is built from chunks and shows one dimple per chunk. This one is
  * built from <i>smooth</i> stone, and {@link com.tarosie.granularity.core.Finish#SMOOTH} is precisely
  * the state in which a block has stopped showing its grains separately. Drawing nine stones on the
  * side of a bench made of stone that no longer has visible stones in it would contradict the recipe.
- * So its model carries zero grain layers and one averaged tint, and the composition it stores is
- * there to be hammered back out rather than to be looked at.
+ * So its model carries zero grain layers, and the two compositions it stores are averaged rather than
+ * shown stone by stone.
  *
  * <h2>Why the recipe is not the reason it exists</h2>
  * It replaces vanilla's stonecutter, which had become uncraftable: vanilla's recipe asks for
@@ -88,7 +90,7 @@ public class CompositeStonecutterBlock extends StonecutterBlock implements Entit
      *
      * <p>Vanilla's outline is the bench alone, because vanilla's blade is decoration. Ours is a
      * working part that moss can jam, and a player who can see moss on the blade should be able to put
-     * a sword to <i>the blade</i> rather than hunting for the right patch of bench. Only the outline
+     * a brush to <i>the blade</i> rather than hunting for the right patch of bench. Only the outline
      * changes: {@link #getCollisionShape} and {@link #getOcclusionShape} stay at the bench, so you
      * still walk over a stonecutter exactly as before and it still casts vanilla's shadow.
      *
@@ -210,7 +212,7 @@ public class CompositeStonecutterBlock extends StonecutterBlock implements Entit
      * block's menu — another mod, a command, a future automation block — is refused by the same rule
      * rather than by a check it never runs. {@code StonecutterMenuMixin} closes one already open.
      *
-     * <p>Scrape the moss off with a sword and it works again; nothing here is permanent.
+     * <p>Brush the moss off and it works again; nothing here is permanent.
      */
     @Nullable
     @Override
