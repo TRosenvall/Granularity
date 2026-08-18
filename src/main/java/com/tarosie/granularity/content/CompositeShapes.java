@@ -208,6 +208,16 @@ public final class CompositeShapes {
         if (stack.is(net.minecraft.world.item.Items.SLIME_BALL)) {
             return grow(stack, state, level, pos, player, hit, GranularityOverlays.SLIME.get());
         }
+        // The hammer already means "take this apart"; struck flat against a face rather than swung to
+        // break the block, it takes it part of the way — cracks. It is the same verb at a lower
+        // intensity, which is why it needed no new tool.
+        //
+        // Damage rather than growth, but the mechanism is identical, and that is the overlay system
+        // earning its keep for the third time: one registration, one sprite, no model, no blockstate,
+        // nothing in the renderer.
+        if (stack.is(GranularityItems.HAMMER.get())) {
+            return grow(stack, state, level, pos, player, hit, GranularityOverlays.CRACKED.get());
+        }
         return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 
@@ -237,9 +247,30 @@ public final class CompositeShapes {
         }
         if (!level.isClientSide) {
             composite.setOverlays(upper, grown);
-            stack.consume(1, player);
+            spend(stack, player);
         }
         return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    /**
+     * What applying an overlay costs, which depends on what applied it.
+     *
+     * <p>A slime ball is spent — one ball, one face. A <b>hammer</b> is not: it is a tool, and eating
+     * one for cracking a wall would be absurd, so it takes a point of wear exactly as the brush does
+     * for taking a coating off. The two verbs now cost the same thing in the same currency, which was
+     * not designed so much as noticed once cracking arrived.
+     *
+     * <p>Split on damageability rather than on the item, so an overlay applied by some future tool
+     * gets the right answer without this being edited again.
+     */
+    private static void spend(ItemStack stack, net.minecraft.world.entity.player.Player player) {
+        if (stack.isDamageableItem()) {
+            stack.hurtAndBreak(1, player, player.getMainHandItem() == stack
+                    ? net.minecraft.world.entity.EquipmentSlot.MAINHAND
+                    : net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+        } else {
+            stack.consume(1, player);
+        }
     }
 
     /**

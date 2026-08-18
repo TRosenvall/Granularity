@@ -356,6 +356,7 @@
   "material.granularity.tuff": "Tuff",
   "material.granularity.water": "Water",
   "material.granularity.zinc": "Zinc",
+  "overlay.granularity.cracked": "Cracked",
   "overlay.granularity.moss": "Mossy",
   "overlay.granularity.slime": "Slimed"
 }

@@ -43,7 +43,7 @@ import net.minecraft.resources.ResourceLocation;
  * @param family  overlays that cannot share a face, or null where the overlay stacks with anything
  */
 public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation> perFace,
-                      @org.jetbrains.annotations.Nullable ResourceLocation family) {
+                      @org.jetbrains.annotations.Nullable ResourceLocation family, boolean tinted) {
 
     public Overlay {
         perFace = Map.copyOf(perFace);
@@ -51,12 +51,29 @@ public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation>
 
     /** An overlay that looks the same from every direction and stacks with anything — moss, slime. */
     public Overlay(ResourceLocation texture) {
-        this(texture, Map.of(), null);
+        this(texture, Map.of(), null, false);
     }
 
     /** One stage of something: exclusive with every other overlay in the same family. */
     public Overlay(ResourceLocation texture, ResourceLocation family) {
-        this(texture, Map.of(), family);
+        this(texture, Map.of(), family, false);
+    }
+
+    /**
+     * An overlay drawn in the block's <b>own</b> colour rather than its sprite's.
+     *
+     * <p>Overlays are untinted by default and that is usually right: moss is green on slate and green
+     * on marble, because moss is a different material sitting on the stone. <b>Damage is not.</b> A
+     * crack is the same rock, in shadow — so it has to be darker than whatever it is cracking, and no
+     * single fixed colour can be darker than both chalk and deepslate.
+     *
+     * <p>Keeping the tint index solves it exactly, because a tint multiplies: a mid-grey sprite over a
+     * block tinted slate comes out as slate at half brightness, and over marble as marble at half
+     * brightness. It is the same trick the whole mod runs on — greyscale art, colour from the
+     * composition — applied to an overlay for the first time.
+     */
+    public static Overlay tinted(ResourceLocation texture) {
+        return new Overlay(texture, Map.of(), null, true);
     }
 
     /**
@@ -67,7 +84,7 @@ public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation>
      */
     public static Overlay topAndSides(ResourceLocation top, ResourceLocation sides,
                                       @org.jetbrains.annotations.Nullable ResourceLocation family) {
-        return new Overlay(sides, Map.of(Direction.UP, top), family);
+        return new Overlay(sides, Map.of(Direction.UP, top), family, false);
     }
 
     /** The sprite for one face, falling back to the overlay's own. */

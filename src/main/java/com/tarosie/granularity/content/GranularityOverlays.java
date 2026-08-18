@@ -51,6 +51,26 @@ public final class GranularityOverlays {
     public static final DeferredHolder<Overlay, Overlay> SLIME = OVERLAYS.register("slime",
             () -> new Overlay(ResourceLocation.fromNamespaceAndPath(Granularity.MODID, "block/cobblestone_slime")));
 
+    /**
+     * Cracks, struck into the surface with a hammer.
+     *
+     * <p>The first overlay that is <b>damage</b> rather than growth, and the first generated rather
+     * than cut from vanilla art. That was the point: vanilla's five {@code cracked_*} textures each
+     * trace the mortar lines of the bricks they were drawn for, so lifting one onto a Mottled or
+     * Banded face draws ghost bricks — mortar in the shape of cracks, on a surface that has none. A
+     * network generated from a cell field aligns with nothing and so is at home on all twenty styles.
+     * See {@code tools/gen_cracks.py}.
+     *
+     * <p>Generated <b>once</b>, into one sprite, rather than per block. A pattern computed from
+     * position would cost a field evaluation per block and have to agree between client and server —
+     * a whole class of desync in exchange for variety nobody asked for.
+     *
+     * <p>Untinted, like every overlay, which is exactly right here: a crack is a shadow in a fissure,
+     * and a shadow is dark on slate and dark on marble alike.
+     */
+    public static final DeferredHolder<Overlay, Overlay> CRACKED = OVERLAYS.register("cracked",
+            () -> Overlay.tinted(ResourceLocation.fromNamespaceAndPath(Granularity.MODID, "block/cobblestone_cracked")));
+
     private GranularityOverlays() {
     }
 

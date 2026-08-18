@@ -233,7 +233,13 @@ public class OverlayBakedModel extends BakedModelWrapper<BakedModel> {
                     byFace[slot] = sprite(overlay.textureFor(face));
                 }
                 if (byFace[slot] != null) {
-                    out.add(retexture(quad, byFace[slot]));
+                    // A tinted overlay keeps the surface's tint index, so its greyscale sprite is
+                    // multiplied by the block's own colour — see Overlay.tinted. Everything else drops
+                    // to -1 and draws exactly as its sprite was painted, because moss is green
+                    // whatever it grew on.
+                    out.add(overlay.tinted()
+                            ? retexture(quad, byFace[slot], quad.getTintIndex())
+                            : retexture(quad, byFace[slot]));
                 }
             }
         }

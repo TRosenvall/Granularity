@@ -86,18 +86,22 @@ Only **one gravel and one cobblestone**, with a random composition and colour. R
 per possible composition is item bloat with no upside — a player who wants a specific mix crafts it,
 or uses a command. Slightly more effort, much smaller registry.
 
-## 7. What this reworks
+## 7. What this reworked — all of it, and where it went
 
-| area | status |
+This was a to-build list when the section was written. Everything on it is done, and the row is kept
+only to say where it landed, because the first question about a design note is always "did this
+actually happen?"
+
+| area | where it lives now |
 |---|---|
-| `Composition.smelted()` snapping to the nearest stone | **wrong — remove** |
-| Grain backed by an item, registered with item + hex + class | to build |
-| 2×2 gravel recipe | to build |
-| Naming math, single-grain versus mixed | to build |
-| Three smelt outcomes: smooth stone / ore block / alloy block | to build |
-| Cobblestone per-stone overlays on the light areas | to build |
-| Gravel overlays, any partition | to build |
-| Creative tab: one generic each, random composition | to build |
+| `Composition.smelted()` snapping to the nearest stone | **removed** — no references remain |
+| Grain backed by an item, registered with item + hex + class | `core/Grain`, `core/Grains` — and since grown into an open roster with datapack grains, see `MATERIAL_ROSTER.md` |
+| 2×2 gravel recipe | `recipe/GravelRecipe` |
+| Naming math, single-grain versus mixed | `CompositeBlockItem.getName` — now three wordings, since a dyed block needs somewhere to put the colour (§8) |
+| Three smelt outcomes: smooth stone / ore block / alloy block | `recipe/SmeltAverageRecipe`. Smooth stone is no longer a block but a **finish**, which is what `core/Finish` is about |
+| Cobblestone per-stone overlays on the light areas | one model with ten tinted layers, `tools/gen_shape_models.py` — not post-bake composition, which is what unblocked stairs and walls |
+| Gravel overlays, any partition | `tools/extract_textures.py`, nine balanced regions |
+| Creative tab: one generic each, random composition | `GranularityItems.OBJECTS_TAB` |
 
 ---
 
@@ -384,3 +388,74 @@ reorient one of them.
 
 The player never handles a vertical slab. There is one item, it carries no axis, and every drop is an
 ordinary slab again; orientation exists only while the block is placed.
+
+---
+
+## 11. Cracks
+
+**Shift + right-click a face with the hammer** and it cracks; **smelt the block** and the cracks close,
+returning it to smooth. One face per swing at a point of hammer wear.
+
+An `Overlay`, not a `Finish`, and the measurements decided it rather than taste: a crack moves 19–64
+pixels of 256 and 78–100% of them merely *darken* (§2c of `STONEWORK_STYLES.md`). That is a layer over
+a surface, not a surface of its own — so cracking cost one registration, one sprite and one branch in
+`CompositeShapes`. No model, no blockstate, nothing in the renderer. The third time the overlay system
+has paid for itself.
+
+### The shape took three attempts, and the wrong turns are the useful part
+
+**Worley cell boundaries** came first: a mosaic, every cell walled off at even spacing. That is dried
+mud or crazed glaze, not a hammer blow, and no amount of thinning or softening was going to fix a shape
+wrong at the root.
+
+**A radial impact star** came next, from Timothy's photographs of a quarried block before and after.
+Defensible — the crack is applied by hitting the face, so a strike point is honest — but at sixteen
+pixels it read as a glyph stamped on the stone.
+
+**What vanilla actually does** settled it, and only because Timothy pushed back on the claim that its
+cracks follow the mortar lines. They do not. Subtract `deepslate_bricks` from
+`cracked_deepslate_bricks` with `tools/subtract_textures.py` and **there is no fissure in the result at
+any threshold** — vanilla did not overlay a crack, it *redrew the brick edges*. What the diff does show
+is the character both earlier attempts lacked: **irregular width**, widening into broken patches rather
+than running one pixel across for its whole length, and **chips** spalled off alongside. That is most
+of what looks like noise in the diff, and most of what makes a crack read as a crack.
+
+So: a fissure run out from the middle in **both** directions with branches hung off it. Out from the
+centre rather than pulled toward it — an attempt to bias the walk inward curled it into a spiral, which
+is a blob and not a fracture.
+
+### Crossed with its own quarter-turn
+
+Timothy's idea, and it does two things. It doubles the damage without doubling the drawing; and it
+makes the sprite read near-identically **whichever way a face is oriented**, which matters because one
+sprite serves all six faces of every cracked block. The darker of the two wins at each pixel, so where
+they cross the fissure stays a fissure instead of being lightened by a chip beneath it. Because the
+sprite already wraps, its quarter-turn wraps too, and cracks still line up across block edges.
+
+109 of 256 pixels. I thought that too heavy and halved the source uninvited; Timothy was right and I was
+wrong — in situ, over lit surfaces at playing distance, it is what he was after. Flat swatches in a
+preview exaggerate coverage.
+
+### Two rendering rules it has to obey
+
+**Alpha does not fade anything.** These models draw on `cutout_mipped`, whose shader is
+`if (color.a < 0.5) discard;` — a binary test at 128, never a blend. A sprite at a third opacity is not
+a faint crack, it is *no crack at all*, every pixel discarded. That happened, despite the rule already
+being written down in this repo. Every pixel is opaque; lightness lives in the grey value.
+
+**And the colour cannot be fixed.** An untinted crack must be darker than whatever it cracks, and no one
+colour is darker than both chalk and deepslate. So cracks are the first **tinted** overlay
+(`Overlay.tinted`): the sprite is greyscale and a tint multiplies, so 128 comes out as that stone at
+half brightness, whatever stone it is. The whole mod already worked this way — greyscale art, colour
+from the composition — and this is that trick reaching an overlay.
+
+### Smelting is the way back
+
+Firing a cracked block closes it and returns it to **smooth**, whatever style it was wearing. Note what
+that costs: the style goes too. That is not a special case for cracks but the furnace's existing rule
+showing through — `assemble` carries the grains across and nothing else, so moss, dye and stonework
+all burn off together. Repairing a cracked Mottled wall means re-cutting it, which is the honest price
+of the block having been broken.
+
+Cracks are purely cosmetic for now. `getDestroyProgress` can read the coating later to make them
+weaken the block, without changing anything stored.

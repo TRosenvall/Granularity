@@ -43,9 +43,26 @@ public class SmeltAverageRecipe extends SmeltingRecipe {
 
     @Override
     public boolean matches(SingleRecipeInput input, Level level) {
-        // Only unworked stone goes in the furnace; smelting an already-smooth block does nothing.
-        return CompositeIngredient.matches(input.item(), GranularityBlocks.COBBLESTONE.get(),
-                com.tarosie.granularity.core.Finish.COBBLED);
+        ItemStack stack = input.item();
+        if (!CompositeIngredient.any(stack, GranularityBlocks.COBBLESTONE.get())) {
+            return false;
+        }
+        // Unworked stone goes in the furnace, as it always has; smelting an already-smooth block does
+        // nothing, which is why the finish is checked rather than ignored.
+        if (com.tarosie.granularity.content.Finishes.of(stack)
+                == com.tarosie.granularity.core.Finish.COBBLED) {
+            return true;
+        }
+        // And so does **cracked** stone, whatever style it is wearing. Firing a cracked block closes
+        // it up and returns it to smooth — the one way back from damage, and Timothy's call on what
+        // that way should be.
+        //
+        // Note what this costs the player: the style goes too. That is not a special case for cracks
+        // but the furnace's existing rule showing through — assemble carries the grains across and
+        // nothing else, so moss, dye and now the stonework all burn off together. Repairing a cracked
+        // Mottled wall means re-cutting it, which is the honest price of the block having been broken.
+        return com.tarosie.granularity.content.Moss.of(stack)
+                .facesOf(com.tarosie.granularity.content.GranularityOverlays.CRACKED.get()) != 0;
     }
 
     @Override
