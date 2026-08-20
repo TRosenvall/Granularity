@@ -1,6 +1,10 @@
 package com.tarosie.granularity.client;
 
 import com.tarosie.granularity.content.CompositionHolder;
+import com.tarosie.granularity.content.Costumes;
+import com.tarosie.granularity.content.GranularityComponents;
+import com.tarosie.granularity.content.Region;
+import net.minecraft.world.item.ItemStack;
 import com.tarosie.granularity.content.Dyes;
 import com.tarosie.granularity.core.Composition;
 import com.tarosie.granularity.core.GrainClass;
@@ -96,6 +100,15 @@ public class CompositeBlockColour implements BlockColor {
             // greyscale for the two ticks of the stroke, which is most of what "the flash" was.
             return moving(MovingComposites.at(pos), tintIndex);
         }
+        // A costume answers for whichever part of the block it is on, and which way it answers depends
+        // on where that part's donor keeps its appearance. See Costumes for the two kinds.
+        Costumes worn = composite.costumes();
+        if (!worn.isEmpty()) {
+            Integer dressed = costumed(worn, tintIndex);
+            if (dressed != null) {
+                return dressed;
+            }
+        }
         if (tintIndex == WOOD_TINT) {
             return woodTint(composite.wood());
         }
@@ -117,6 +130,148 @@ public class CompositeBlockColour implements BlockColor {
                     tintIndex - UPPER_BASE);
         }
         return tintFor(composite.composition(), null, tintIndex);
+    }
+
+    /**
+     * The colour of a part wearing a costume, or null where nothing is worn there.
+     *
+     * <p>Two answers, for the two kinds of donor:
+     *
+     * <ul>
+     *   <li>A <b>foreign</b> donor keeps its appearance in a texture, which {@link TransmogBakedModel}
+     *       has already lent to the quad. It must then be drawn in the donor's own colours, so the
+     *       part takes no tint at all — the two halves have to agree or a sandstone costume comes out
+     *       slate-coloured.</li>
+     *   <li>One of <b>ours</b> keeps its appearance in nine grains, so the part is drawn as stone and
+     *       coloured from the donor's composition rather than from this block's.</li>
+     * </ul>
+     *
+     * <p>Tint indices at or above {@link Region#COSTUME_BASE} are quads the wrapper synthesised for a
+     * part that is not stone — a piston's plate turned to rock — and they carry which region they came
+     * from, so two parts wearing two different stones stay distinguishable here.
+     */
+    @Nullable
+    private static Integer costumed(Costumes worn, int tintIndex) {
+        Region synthesised = tintIndex >= Region.COSTUME_BASE ? Region.ofCostumeTint(tintIndex) : null;
+        if (synthesised != null) {
+            Costumes.Dressed part = worn.on(synthesised);
+            int layer = Region.costumeLayer(tintIndex);
+            Integer painted = paintOf(part.colorant());
+            if (painted != null) {
+                return layer == 0 ? LatticeColour.matrixTint(painted) : painted;
+            }
+            Composition lent = part.textureComposition();
+            if (lent != null) {
+                return tintFor(lent, null, layer);
+            }
+            // A masked part keeping its own sprite, wearing a block that could not lend a texture to
+            // it. The block still says what colour it is: its map colour, which is the one thing every
+            // block in the game has an opinion about.
+            Integer flat = flatColour(part);
+            return flat == null ? NO_TINT : flat;
+        }
+        if (tintIndex >= DYE_BASE) {
+            // Dye is painted over a costume rather than hidden by it, so a dressed block can still be
+            // a red one. Left to the ordinary path.
+            return null;
+        }
+        if (tintIndex == PLAIN_TINT) {
+            // A face is never touched at all — not its texture and not its colour. A furnace door and
+            // an observer's eye are how you read the block, and a costume that changed them would be
+            // hiding the one thing the block has to keep telling you.
+            return null;
+        }
+        Costumes.Dressed dressed = worn.covering(tintIndex);
+        if (dressed.isEmpty()) {
+            return null;
+        }
+        Integer paint = paintOf(dressed.colorant());
+        if (tintIndex == METAL_TINT || tintIndex == WOOD_TINT) {
+            // Fittings and timber are one flat colour, so a colorant is all they need.
+            if (paint != null) {
+                return paint;
+            }
+            // A part that takes only a grain — a stonecutter's blade — carries its item in the
+            // costume slot, and paints with it.
+            Integer own = paintOf(dressed.costume());
+            if (own != null) {
+                return own;
+            }
+            // A log is drawn with our greyscale wood, so it takes the colour of the timber it is.
+            if (dressed.isLog()) {
+                return woodTint(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .getKey(dressed.costume().getItem()));
+            }
+            // A block was lent instead, so its own sprite is on this quad and it must be drawn in its
+            // own colours. Falling through here multiplied a dark oak frame by the stonecutter's plank
+            // colour and produced mud — the frame looked broken for exactly this reason.
+            return dressed.costume().isEmpty() ? null : NO_TINT;
+        }
+        int layer = tintIndex >= UPPER_BASE && tintIndex < WOOD_TINT
+                ? tintIndex - UPPER_BASE
+                : tintIndex;
+        if (paint != null) {
+            // The colorant repaints every stone of the part, so the costume's pattern survives and
+            // only its colour goes — a cobble texture in slate. The matrix is muted the way an
+            // average always is here; the grains are exact. See tintFor.
+            return layer == 0 ? LatticeColour.matrixTint(paint) : paint;
+        }
+        if (dressed.isLog()) {
+            // Our greyscale wood is on the quad wherever a log was lent, stone parts included, so it
+            // has to be told what colour of timber it is.
+            return woodTint(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getKey(dressed.costume().getItem()));
+        }
+        Composition lent = dressed.textureComposition();
+        if (lent == null) {
+            // A foreign block with no colorant: TransmogBakedModel has lent its texture and it must be
+            // drawn in its own colours, or a sandstone costume comes out slate-coloured.
+            return NO_TINT;
+        }
+        return tintFor(lent, null, layer);
+    }
+
+    /**
+     * The one colour a part can be given when its texture cannot be replaced.
+     *
+     * <p>Falls back through everything that has an opinion: the colorant, then a grain worn as a
+     * costume, then — for an ordinary block — its own {@code MapColor}, which is the colour Mojang
+     * already chose to stand for that block and is defined for every block in the game, ours and
+     * anyone else's.
+     */
+    @Nullable
+    private static Integer flatColour(Costumes.Dressed part) {
+        Integer paint = paintOf(part.colorant());
+        if (paint != null) {
+            return paint;
+        }
+        Integer own = paintOf(part.costume());
+        if (own != null) {
+            return own;
+        }
+        return part.costume().isEmpty()
+                ? null
+                : woodTint(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                        .getKey(part.costume().getItem()));
+    }
+
+    /**
+     * The colour a grain item paints with, or null if it is not a colorant.
+     *
+     * <p>An <b>ingot is not the same colour as its ore</b>, and both are valid here: raw iron is the
+     * pink of ore, an iron ingot is bright grey. So the item is asked for its own colour rather than
+     * for its material's — the roster's tint if the item is a grain's own, and otherwise the colour of
+     * the block it would be cast into, which is the same {@code x_ingot -> x_block} substitution the
+     * recipe-built fittings already go through.
+     */
+    @Nullable
+    private static Integer paintOf(ItemStack stack) {
+        if (Costumes.grainOf(stack) == null) {
+            return null;
+        }
+        var id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+        com.tarosie.granularity.core.Grain own = com.tarosie.granularity.core.Grains.byItem(id.toString());
+        return own != null ? own.tint() : metalTint(id);
     }
 
     /**

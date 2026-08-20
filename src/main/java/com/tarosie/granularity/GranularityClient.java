@@ -17,9 +17,16 @@ import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 @EventBusSubscriber(modid = Granularity.MODID, value = Dist.CLIENT)
 public class GranularityClient {
 
+    /** Screens are bound to their menu types here; without this, opening one shows nothing at all. */
+    private static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        event.register(com.tarosie.granularity.content.GranularityMenus.TRANSMOG.get(),
+                com.tarosie.granularity.client.TransmogScreen::new);
+    }
+
     public GranularityClient(ModContainer container, IEventBus modEventBus) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
         GranularityModels.register(modEventBus);
+        modEventBus.addListener(GranularityClient::registerScreens);
     }
 
     /**

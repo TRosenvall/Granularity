@@ -37,6 +37,8 @@ public class CompositeDispenserBlockEntity extends DispenserBlockEntity implemen
 
     private static final String DYES_KEY = "Dyes";
 
+    private static final String COSTUMES_KEY = "Transmog";
+
     private static final String OVERLAYS_KEY = "Overlays";
 
     private Composition composition = Composition.uniform(Grains.ANDESITE.id());
@@ -44,6 +46,32 @@ public class CompositeDispenserBlockEntity extends DispenserBlockEntity implemen
     private CompositionLayers layers;
 
     private Dyes dyes = Dyes.NONE;
+
+    /** What this block is wearing, part by part. See {@link Costumes}. */
+    private Costumes costumes = Costumes.NONE;
+
+    /** The reduction of the costume's composition, dropped whenever the costume changes. */
+    private CompositionLayers costumeLayers;
+
+    @Override
+    public Costumes costumes() {
+        return costumes;
+    }
+
+    @Override
+    public void setCostumes(Costumes value) {
+        if (costumes.equals(value)) {
+            return;
+        }
+        costumes = value;
+        costumeLayers = null;
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+            requestModelDataUpdate();
+        }
+    }
+
 
     private Coating overlays = Coating.NONE;
 
@@ -142,8 +170,25 @@ public class CompositeDispenserBlockEntity extends DispenserBlockEntity implemen
 
     @Override
     public ModelData getModelData() {
+        // A costume from one of our blocks is worn as a composition, not as a sprite: its stones are
+        // what the block is drawn from while it is on. See Costumes.lentComposition.
+        Composition worn = costumes.lentComposition();
+        if (worn != null && costumeLayers == null) {
+            costumeLayers = CompositionLayers.of(worn);
+        }
         return ModelData.builder()
-                .with(com.tarosie.granularity.client.CompositionBakedModel.LAYERS, layers())
+                .with(com.tarosie.granularity.client.CompositionBakedModel.LAYERS,
+                        worn == null ? layers() : costumeLayers)
+                // A costume lends its finish as well as its stones, which is what makes the surface
+                // actually change rather than merely recolour. The two halves are carried separately
+                // because a block split at the waist can wear two different rocks — which is exactly
+                // the lower/upper pair this State was built for when a double slab needed it.
+                .with(com.tarosie.granularity.client.FinishBakedModel.FINISH,
+                        new com.tarosie.granularity.client.FinishBakedModel.State(
+                                costumes.covering(0).finish(),
+                                costumes.covering(com.tarosie.granularity.client
+                                        .CompositeBlockColour.UPPER_BASE).finish()))
+                .with(com.tarosie.granularity.client.TransmogBakedModel.COSTUMES, costumes)
                 .with(com.tarosie.granularity.client.OverlayBakedModel.OVERLAYS,
                         new com.tarosie.granularity.client.OverlayBakedModel.State(
                                 overlays, Coating.NONE, dyes, Dyes.NONE))
@@ -159,13 +204,15 @@ public class CompositeDispenserBlockEntity extends DispenserBlockEntity implemen
             layers = null;
         }
         dyes = Dyes.load(tag, DYES_KEY, LEGACY_MATRIX_KEY);
+        costumes = Costumes.load(registries, tag, COSTUMES_KEY);
+        costumeLayers = null;
         overlays = GranularityOverlays.load(tag, OVERLAYS_KEY);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        writeComposition(tag);
+        writeComposition(tag, registries);
     }
 
     /**
@@ -178,13 +225,14 @@ public class CompositeDispenserBlockEntity extends DispenserBlockEntity implemen
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
-        writeComposition(tag);
+        writeComposition(tag, registries);
         return tag;
     }
 
-    private void writeComposition(CompoundTag tag) {
+    private void writeComposition(CompoundTag tag, HolderLookup.Provider registries) {
         CompositionCodecs.save(tag, COMPOSITION_KEY, composition);
         dyes.save(tag, DYES_KEY);
+        costumes.save(registries, tag, COSTUMES_KEY);
         GranularityOverlays.save(tag, OVERLAYS_KEY, overlays);
     }
 

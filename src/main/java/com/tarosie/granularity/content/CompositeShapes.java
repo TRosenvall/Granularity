@@ -81,6 +81,35 @@ public final class CompositeShapes {
      */
     public static List<ItemStack> drops(Block block, net.minecraft.world.level.block.state.BlockState state,
                                         LootParams.Builder params, int count, int grains) {
+        return withCostume(bareDrops(block, state, params, count, grains), params);
+    }
+
+    /**
+     * A costume handed back alongside whatever the block itself dropped.
+     *
+     * <p>Wrapped around each drop path rather than written into them, because there are three — a whole
+     * block, a slab, and everything shaped or mechanical — and a costume forgotten by one of them is
+     * an item destroyed with no message. This is the exact trap {@code CompositeBlock.wholeBlockDrops}
+     * documents about the piston head losing its dye, and it caught this feature too: the costume was
+     * added to the shape path only, so breaking a plain block silently ate it.
+     *
+     * <p>Deliberately outside the hammer check as well. Smashing a block for its grains is still no
+     * reason to destroy the separate item somebody put on it.
+     */
+    public static List<ItemStack> withCostume(List<ItemStack> dropped, LootParams.Builder params) {
+        if (!(params.getOptionalParameter(LootContextParams.BLOCK_ENTITY)
+                instanceof CompositionHolder composite)
+                || composite.costumes().isEmpty()) {
+            return dropped;
+        }
+        List<ItemStack> all = new java.util.ArrayList<>(dropped);
+        all.addAll(composite.costumes().donors());
+        return List.copyOf(all);
+    }
+
+    private static List<ItemStack> bareDrops(Block block,
+                                        net.minecraft.world.level.block.state.BlockState state,
+                                        LootParams.Builder params, int count, int grains) {
         BlockEntity entity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         ItemStack tool = params.getOptionalParameter(LootContextParams.TOOL);
         if (tool != null && tool.is(GranularityItems.HAMMER.get())
@@ -160,6 +189,28 @@ public final class CompositeShapes {
             ItemStack stack, net.minecraft.world.level.block.state.BlockState state, Level level,
             BlockPos pos, net.minecraft.world.entity.player.Player player,
             net.minecraft.world.phys.BlockHitResult hit) {
+        // Sneak plus a brush opens the transmogrification screen. It has to be tested *before* the
+        // brushing branch below, which does not check sneak: otherwise a sneaking player aimed at a
+        // mossy face would start scrubbing it instead, and the screen would be unreachable exactly
+        // where it is most likely to be wanted.
+        //
+        // Not in adventure mode. Asked as `mayBuild` rather than by naming the mode, because that is
+        // the question vanilla itself asks before letting anyone alter a block — so this also covers
+        // spectators, and any future mode that withholds building without us hearing about it. Tested
+        // on both sides, or the client would open a screen the server refuses to back.
+        if (stack.is(net.minecraft.world.item.Items.BRUSH) && player.isShiftKeyDown()
+                && player.mayBuild()) {
+            if (!level.isClientSide && level.getBlockEntity(pos) instanceof CompositionHolder) {
+                final BlockPos dressing = pos.immutable();
+                player.openMenu(new net.minecraft.world.SimpleMenuProvider(
+                        (containerId, inventory, opener) ->
+                                new TransmogMenu(containerId, inventory, level, dressing),
+                        net.minecraft.network.chat.Component.translatable(
+                                "container.granularity.transmogrification")),
+                        buffer -> buffer.writeBlockPos(dressing));
+            }
+            return net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide);
+        }
         // Brushing comes before the sneak gate, because stripping a log with an axe needs no sneak
         // and this is the same gesture. It passes when the face is already bare, so a brush in hand
         // still opens a clean furnace and only cleans a dirty one.
@@ -305,7 +356,8 @@ public final class CompositeShapes {
             return false;
         }
         boolean upper = Moss.upperHalfAt(state, pos, at);
-        Coating bare = (upper ? composite.upperOverlays() : composite.overlays()).without(face);
+        Coating bare = (upper ? composite.upperOverlays() : composite.overlays())
+                .without(face, Overlay::brushable);
         if (bare == null) {
             return false;
         }
@@ -332,7 +384,8 @@ public final class CompositeShapes {
             return false;
         }
         boolean upper = Moss.upperHalfAt(state, pos, at);
-        return (upper ? composite.upperOverlays() : composite.overlays()).without(face) != null;
+        return (upper ? composite.upperOverlays() : composite.overlays())
+                .without(face, Overlay::brushable) != null;
     }
 
     public static void placed(Level level, BlockPos pos, ItemStack stack) {

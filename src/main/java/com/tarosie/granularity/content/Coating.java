@@ -74,9 +74,24 @@ public record Coating(Map<Overlay, Integer> faces) {
      */
     @Nullable
     public Coating without(Direction face) {
+        return without(face, overlay -> true);
+    }
+
+    /**
+     * The same, sparing any overlay the predicate rejects.
+     *
+     * <p>A brush takes growth off and leaves damage alone — see {@link Overlay#damage} — so the two
+     * callers ask different questions of the same face and this is where they differ.
+     */
+    @Nullable
+    public Coating without(Direction face, java.util.function.Predicate<Overlay> removable) {
         Map<Overlay, Integer> left = new LinkedHashMap<>();
         boolean changed = false;
         for (Map.Entry<Overlay, Integer> entry : faces.entrySet()) {
+            if (!removable.test(entry.getKey())) {
+                left.put(entry.getKey(), entry.getValue());
+                continue;
+            }
             int after = entry.getValue() & ~bit(face);
             changed |= after != entry.getValue();
             if (after != 0) {

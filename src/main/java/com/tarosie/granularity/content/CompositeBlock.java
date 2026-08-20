@@ -57,6 +57,13 @@ public class CompositeBlock extends Block implements EntityBlock, CompositeStone
      * which is exactly how the piston head lost its dye.
      */
     public static List<ItemStack> wholeBlockDrops(Block block, LootParams.Builder params) {
+        // A costume is handed back whole and separately — see CompositeBlockEntity.transmog. The block
+        // itself drops looking like what it is actually made of, because the disguise was never on the
+        // item to begin with.
+        return CompositeShapes.withCostume(bareWholeBlockDrops(block, params), params);
+    }
+
+    private static List<ItemStack> bareWholeBlockDrops(Block block, LootParams.Builder params) {
         BlockEntity entity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
 
         // A hammer takes the block apart instead of picking it up. Breaking in the world is the

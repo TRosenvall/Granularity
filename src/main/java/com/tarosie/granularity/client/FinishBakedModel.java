@@ -124,6 +124,12 @@ public class FinishBakedModel extends net.neoforged.neoforge.client.model.BakedM
                 : getQuads(state, side, rand, ModelData.EMPTY, null);
     }
 
+    /** Whether this tint is one of the nine stones of either half, which is what a finish removes. */
+    private static boolean isGrainLayer(int tint) {
+        return (tint > 0 && tint < CompositeBlockColour.UPPER_BASE)
+                || (tint > CompositeBlockColour.UPPER_BASE && tint < CompositeBlockColour.WOOD_TINT);
+    }
+
     /**
      * Each half's base layer wearing its finish, with a worked half's grain layers dropped — showing
      * the nine stones separately is exactly what working the block stops doing.
@@ -138,6 +144,16 @@ public class FinishBakedModel extends net.neoforged.neoforge.client.model.BakedM
                 out.add(quad);
             } else if (tint == 0 || tint == CompositeBlockColour.UPPER_BASE) {
                 out.add(OverlayBakedModel.retexture(quad, spriteFor(finish, quad.getDirection()), tint));
+            } else if (!isGrainLayer(tint)) {
+                // Only the grain layers go. Working a block smooths its stone; it does not remove the
+                // parts that were never stone — a smooth piston still has a wooden plate and metal
+                // brackets, and a smooth furnace still has a door.
+                //
+                // Everything but a stone block used to reach this with a worked finish never, so the
+                // old "keep tint 0 and nothing else" was invisible until a costume could hand a
+                // machine a finish. Then a fine-tiled piston lost its plate, its brackets and its
+                // grain layers at once and rendered as a single flat quad.
+                out.add(quad);
             }
         }
         return out;

@@ -43,7 +43,8 @@ import net.minecraft.resources.ResourceLocation;
  * @param family  overlays that cannot share a face, or null where the overlay stacks with anything
  */
 public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation> perFace,
-                      @org.jetbrains.annotations.Nullable ResourceLocation family, boolean tinted) {
+                      @org.jetbrains.annotations.Nullable ResourceLocation family, boolean tinted,
+                      boolean brushable) {
 
     public Overlay {
         perFace = Map.copyOf(perFace);
@@ -51,16 +52,19 @@ public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation>
 
     /** An overlay that looks the same from every direction and stacks with anything — moss, slime. */
     public Overlay(ResourceLocation texture) {
-        this(texture, Map.of(), null, false);
+        this(texture, Map.of(), null, false, true);
     }
 
     /** One stage of something: exclusive with every other overlay in the same family. */
     public Overlay(ResourceLocation texture, ResourceLocation family) {
-        this(texture, Map.of(), family, false);
+        this(texture, Map.of(), family, false, true);
     }
 
     /**
-     * An overlay drawn in the block's <b>own</b> colour rather than its sprite's.
+     * Damage: drawn in the block's <b>own</b> colour, and not something a brush can take off.
+     *
+     * <p>Two properties, one idea, which is why they are one factory rather than two flags to
+     * remember to set together.
      *
      * <p>Overlays are untinted by default and that is usually right: moss is green on slate and green
      * on marble, because moss is a different material sitting on the stone. <b>Damage is not.</b> A
@@ -71,9 +75,14 @@ public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation>
      * block tinted slate comes out as slate at half brightness, and over marble as marble at half
      * brightness. It is the same trick the whole mod runs on — greyscale art, colour from the
      * composition — applied to an overlay for the first time.
+     *
+     * <p>And it is <b>not brushable</b>, for the same reason it is tinted: growth sits <i>on</i> a
+     * surface and can be swept off it, but a crack is a hole <i>in</i> the surface and no amount of
+     * brushing fills it in. Firing the block closes it; nothing else does. Without this a brush
+     * scrubbed cracks away, which read as a bug because it is one.
      */
-    public static Overlay tinted(ResourceLocation texture) {
-        return new Overlay(texture, Map.of(), null, true);
+    public static Overlay damage(ResourceLocation texture) {
+        return new Overlay(texture, Map.of(), null, true, false);
     }
 
     /**
@@ -84,7 +93,7 @@ public record Overlay(ResourceLocation texture, Map<Direction, ResourceLocation>
      */
     public static Overlay topAndSides(ResourceLocation top, ResourceLocation sides,
                                       @org.jetbrains.annotations.Nullable ResourceLocation family) {
-        return new Overlay(sides, Map.of(Direction.UP, top), family, false);
+        return new Overlay(sides, Map.of(Direction.UP, top), family, false, true);
     }
 
     /** The sprite for one face, falling back to the overlay's own. */

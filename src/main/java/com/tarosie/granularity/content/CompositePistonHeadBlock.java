@@ -107,6 +107,10 @@ public class CompositePistonHeadBlock extends PistonHeadBlock implements EntityB
             // The plate on the head is the same timber as the plate on the piston.
             head.setWood(piston.wood());
             head.setMetal(piston.metal());
+            // And it wears what the piston wears. Everything else about a head is inherited here, so
+            // a costume left out would mean an extended piston shedding its disguise halfway along
+            // its own arm — and only while extended, which is the hardest kind of wrong to catch.
+            head.setCostumes(piston.costumes());
         }
     }
 }

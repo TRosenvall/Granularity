@@ -159,7 +159,11 @@ public final class GranularityModels {
                 // whatever it chose. Moss grows on smooth stone as readily as on cobbled.
                 // Every composite takes a finish now: a finish is a sprite on the base layer, and
                 // the wrapper derives that from whatever shape it is handed.
-                BakedModel wrapped = new OverlayBakedModel(new FinishBakedModel(entry.getValue()));
+                // Overlays outermost, then the costume, then the finish. A costume replaces the
+                // surface a finish would have drawn — it is worn *over* the worked stone — and moss
+                // then grows on the disguise rather than under it.
+                BakedModel wrapped = new OverlayBakedModel(
+                        new TransmogBakedModel(new FinishBakedModel(entry.getValue())));
                 if (key.id().equals(stonecutter)) {
                     // Outermost, so it sees the moss copies too and can leave them alone — it matches
                     // on the animated sprite rather than on a tint index. See StoppedBladeModel.
@@ -181,6 +185,71 @@ public final class GranularityModels {
         // Said out loud for the same reason the others are: a blade that goes on turning under moss is
         // a silent failure, and a count of zero here is the only warning you would get.
         Granularity.LOGGER.info("Stoppable blades: {} stonecutter variants can jam.", stopped);
+        verifyRegions(models, composites);
+    }
+
+    /**
+     * Checks that every part a model actually draws is a part somebody can dress.
+     *
+     * <p>{@code Region.of} declares what each block is made of by hand, and a hand-written list beside
+     * a set of models is a list that goes stale — a machine gains a metal trim, nothing is updated, and
+     * the trim is simply undressable for ever with no error to say so. So the declaration is checked
+     * against the models it describes, at the one moment both are in memory.
+     *
+     * <p>Loud rather than fatal, because a missing region draws a correct-looking block; it only means
+     * one part cannot be costumed. A count of zero mismatches is the thing worth seeing.
+     */
+    private static void verifyRegions(java.util.Map<ModelResourceLocation, BakedModel> models,
+                                      java.util.Set<ResourceLocation> composites) {
+        java.util.Map<ResourceLocation, java.util.Set<Integer>> uncovered = new java.util.HashMap<>();
+        net.minecraft.util.RandomSource random = net.minecraft.util.RandomSource.create(0L);
+        for (var entry : models.entrySet()) {
+            ResourceLocation id = entry.getKey().id();
+            if (!composites.contains(id) || entry.getKey().variant().equals("inventory")) {
+                continue;
+            }
+            var block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(id);
+            var declared = new java.util.ArrayList<>(com.tarosie.granularity.content.Region.of(block));
+            declared.addAll(com.tarosie.granularity.content.Region.withheld(block));
+            java.util.List<net.minecraft.core.Direction> sides = new java.util.ArrayList<>();
+            sides.add(null);
+            sides.addAll(java.util.List.of(net.minecraft.core.Direction.values()));
+            for (var side : sides) {
+                for (var quad : entry.getValue().getQuads(null, side, random)) {
+                    int tint = quad.getTintIndex();
+                    if (tint < 0 || tint >= CompositeBlockColour.DYE_BASE) {
+                        continue;
+                    }
+                    if (declared.stream().noneMatch(region -> region.covers(tint))) {
+                        uncovered.computeIfAbsent(id, ignored -> new java.util.TreeSet<>()).add(tint);
+                    }
+                }
+            }
+        }
+        // The table itself, not just a verdict. Which parts a block offers is the whole of what this
+        // feature does, it is declared by hand in Region.of, and reading it off a running game beats
+        // opening seven screens to find out.
+        java.util.List<String> table = new java.util.ArrayList<>();
+        for (ResourceLocation id : new java.util.TreeSet<>(composites)) {
+            var block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(id);
+            var offered = com.tarosie.granularity.content.Region.of(block);
+            var kept = com.tarosie.granularity.content.Region.withheld(block);
+            table.add(id.getPath() + "=" + offered.stream()
+                    .map(com.tarosie.granularity.content.Region::id).toList()
+                    + (kept.isEmpty() ? "" : " (withheld " + kept.stream()
+                            .map(com.tarosie.granularity.content.Region::id).toList() + ")"));
+        }
+        Granularity.LOGGER.info("Costume regions: {}", String.join(", ", table));
+
+        if (uncovered.isEmpty()) {
+            Granularity.LOGGER.info(
+                    "Costume regions: every drawn part of every composite is dressable or withheld "
+                            + "on purpose.");
+            return;
+        }
+        uncovered.forEach((id, tints) -> Granularity.LOGGER.warn(
+                "Costume regions: {} draws tint indices {} that no declared region covers — "
+                        + "those parts cannot be dressed. See Region.of.", id, tints));
     }
 
 

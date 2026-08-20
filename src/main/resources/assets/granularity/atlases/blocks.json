@@ -11,6 +11,22 @@
     {
       "type": "minecraft:single",
       "resource": "granularity:block/cobblestone_cracked"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "granularity:item/empty_transmog_slot"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "granularity:item/empty_transmog_slot_grain"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "granularity:block/log_side"
+    },
+    {
+      "type": "minecraft:single",
+      "resource": "granularity:block/log_top"
     }
   ]
 }

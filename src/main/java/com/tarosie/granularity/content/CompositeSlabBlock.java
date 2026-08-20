@@ -234,6 +234,10 @@ public class CompositeSlabBlock extends SlabBlock implements EntityBlock, Compos
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        return CompositeShapes.withCostume(bareDrops(state, params), params);
+    }
+
+    private List<ItemStack> bareDrops(BlockState state, LootParams.Builder params) {
         BlockEntity entity = params.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         boolean isDouble = state.getValue(TYPE) == SlabType.DOUBLE;
 

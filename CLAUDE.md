@@ -30,6 +30,8 @@ Where to look, by area:
 | Stonework styles, or adding a texture | `docs/STONEWORK_STYLES.md` — measure with `tools/style_survey.py` **before** authoring a sprite |
 | Worldgen coverage and vanilla suppression | `docs/BLOCK_COVERAGE.md` |
 | Inventory and logistics | `docs/HAULING.md` |
+| Costumes, regions, the transmog screen | `docs/TRANSMOGRIFICATION.md` |
+| Material properties, alloying, the furnace | `docs/ALLOYS.md` |
 | The design itself | `toy_geology_model/GEOLOGY_MOD_DESIGN.md`, `PROTOTYPE_FINDINGS.md` |
 
 Also read the javadoc on the class you are about to change. It carries the argument, not just the

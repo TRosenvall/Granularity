@@ -36,6 +36,8 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
     private static final String UPPER_DYES_KEY = "UpperDyes";
 
     private static final String UPPER_KEY = "Upper";
+
+    private static final String TRANSMOG_KEY = "Transmog";
     private static final String FINISH_KEY = "Finish";
     private static final String UPPER_FINISH_KEY = "UpperFinish";
 
@@ -59,6 +61,9 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
     private Composition composition = Composition.uniform(com.tarosie.granularity.core.Grains.ANDESITE.id());
     private CompositionLayers layers;
 
+    /** The reduction of the costume's composition, when the costume is one of our own blocks. */
+    private CompositionLayers costumeLayers;
+
     /** The dyed faces of this block, or of a double slab's lower half. */
     private Dyes dyes = Dyes.NONE;
 
@@ -73,6 +78,9 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
      */
     @Nullable
     private Composition upper;
+
+    /** What this block is wearing, part by part. See {@link Costumes}. */
+    private Costumes costumes = Costumes.NONE;
 
     /** Whether the single half this holds is the top one — needed to know which half is free. */
     private boolean storedIsTop;
@@ -220,6 +228,32 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
      *
      * <p>Null is a legitimate value and means "one stone", which is every other composite.
      */
+    /** The costume this block is wearing, or empty. Never null. */
+    @Override
+    public Costumes costumes() {
+        return costumes;
+    }
+
+    /**
+     * Puts a costume on, or takes it off with an empty stack.
+     *
+     * <p>Dirties the model data as well as the block: a costume changes which sprite the surface is
+     * drawn from, so re-tinting would not be enough — the mesh has to be rebuilt.
+     */
+    @Override
+    public void setCostumes(Costumes value) {
+        if (costumes.equals(value)) {
+            return;
+        }
+        costumes = value;
+        costumeLayers = null;
+        setChanged();
+        if (level != null) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+            requestModelDataUpdate();
+        }
+    }
+
     public void setUpper(@Nullable Composition value) {
         if (java.util.Objects.equals(upper, value)) {
             return;
@@ -348,16 +382,71 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
         }
     }
 
+    /**
+     * The composition a costume is lending, or null when the donor is not one of our blocks.
+     *
+     * <p>This is the difference between the two kinds of costume, and it is not a special case so
+     * much as the only way either can work. A vanilla block keeps its appearance in a texture, so
+     * wearing it means borrowing that texture. One of ours keeps its appearance in nine grains and a
+     * finish — its sprites are untinted greyscale layers that mean nothing on their own — so wearing
+     * it means borrowing the <i>composition</i> and letting the ordinary layered path draw it.
+     *
+     * <p>Getting this wrong is visible and was: borrowing a granularity cobblestone's sprite lent its
+     * bare base layer, dropped the nine stones, and turned the tinting off with them, so every costume
+     * came out the same flat white-grey whatever you put in the slot.
+     */
+    @org.jetbrains.annotations.Nullable
+    public Composition costumeComposition() {
+        return costumes.lentComposition();
+    }
+
+    /** The finish the stone's costume is lending; only meaningful alongside the composition. */
+    public com.tarosie.granularity.core.Finish costumeFinish() {
+        return costumes.lentFinish();
+    }
+
+    /** The finish covering one half: the costume's if that half is dressed, otherwise the block's. */
+    private com.tarosie.granularity.core.Finish finishFor(
+            int tint, com.tarosie.granularity.core.Finish own) {
+        return costumes.covering(tint).isEmpty() ? own : costumes.covering(tint).finish();
+    }
+
     @Override
     public ModelData getModelData() {
         // Only a double slab coats its two halves separately. Everything else with a second stone —
         // the stonecutter — is one block, and its upper surface wears whatever the lower one does.
         // See Moss.hasTwoHalves; without this a mossy stonecutter has a clean top.
         boolean twoHalves = Moss.hasTwoHalves(getBlockState());
+
+        // A costume from one of our own blocks is worn as a composition, not as a sprite: the layers
+        // and the finish below are the donor's, and every stone, tint and finish downstream follows
+        // from them. Only a foreign donor reaches TransmogBakedModel, which is the sprite swap.
+        Composition worn = costumeComposition();
+        CompositionLayers shownLayers = layers();
+        com.tarosie.granularity.core.Finish shownFinish = finish;
+        com.tarosie.granularity.core.Finish shownUpperFinish = upperFinish;
+        if (worn != null) {
+            if (costumeLayers == null) {
+                costumeLayers = CompositionLayers.of(worn);
+            }
+            shownLayers = costumeLayers;
+        }
+        // Read per half, so a double slab wearing smooth stone on top and cobbles underneath gets
+        // both. Falls back to this block's own finish for a half nothing is worn on.
+        shownFinish = finishFor(0, finish);
+        shownUpperFinish = finishFor(
+                com.tarosie.granularity.client.CompositeBlockColour.UPPER_BASE, upperFinish);
+
         return ModelData.builder()
-                .with(com.tarosie.granularity.client.CompositionBakedModel.LAYERS, layers())
+                .with(com.tarosie.granularity.client.CompositionBakedModel.LAYERS, shownLayers)
                 .with(com.tarosie.granularity.client.FinishBakedModel.FINISH,
-                        new com.tarosie.granularity.client.FinishBakedModel.State(finish, upperFinish))
+                        new com.tarosie.granularity.client.FinishBakedModel.State(
+                                shownFinish, shownUpperFinish))
+                // Sent for both kinds of costume. A foreign donor is a sprite swap; one of ours has
+                // already had its stone dealt with above, and reaches the wrapper only so the parts
+                // that are *not* stone — a piston's timber, a furnace's door — can be turned to stone
+                // as well. A costume covers all of a block or it is not a costume.
+                .with(com.tarosie.granularity.client.TransmogBakedModel.COSTUMES, costumes)
                 .with(com.tarosie.granularity.client.OverlayBakedModel.OVERLAYS,
                         new com.tarosie.granularity.client.OverlayBakedModel.State(
                                 overlays, twoHalves ? upperOverlays : overlays,
@@ -429,6 +518,11 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
         wood = tag.contains(WOOD_KEY)
                 ? net.minecraft.resources.ResourceLocation.tryParse(tag.getString(WOOD_KEY))
                 : null;
+        costumes = Costumes.load(registries, tag, TRANSMOG_KEY);
+        // This is the path a costume actually arrives on for the client — the block update packet,
+        // not setTransmog — so the derived reduction has to be dropped here as well or swapping one
+        // costume for another keeps the first one's stones.
+        costumeLayers = null;
         metal = tag.contains(METAL_KEY)
                 ? net.minecraft.resources.ResourceLocation.tryParse(tag.getString(METAL_KEY))
                 : null;
@@ -462,6 +556,7 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
         if (metal != null) {
             tag.putString(METAL_KEY, metal.toString());
         }
+        costumes.save(registries, tag, TRANSMOG_KEY);
         GranularityOverlays.save(tag, OVERLAYS_KEY, overlays);
         GranularityOverlays.save(tag, UPPER_OVERLAYS_KEY, upperOverlays);
     }
@@ -492,6 +587,7 @@ public class CompositeBlockEntity extends BlockEntity implements CompositionHold
         if (metal != null) {
             tag.putString(METAL_KEY, metal.toString());
         }
+        costumes.save(registries, tag, TRANSMOG_KEY);
         GranularityOverlays.save(tag, OVERLAYS_KEY, overlays);
         GranularityOverlays.save(tag, UPPER_OVERLAYS_KEY, upperOverlays);
         return tag;

@@ -69,4 +69,19 @@ public interface CompositionHolder {
     void setDyes(boolean upper, Dyes dyes);
 
     void setOverlays(boolean upper, Coating overlays);
+
+    /**
+     * What this block is wearing, part by part. Empty for a block showing what it is made of.
+     *
+     * <p>On this interface rather than on {@link CompositeBlockEntity} because a furnace, a dispenser
+     * and a dropper are not one — they had to extend vanilla's container block entities instead — and
+     * a costume that only half the family can carry is a menu that silently does nothing when opened
+     * on the other half. That is exactly how it failed the first time.
+     */
+    default Costumes costumes() {
+        return Costumes.NONE;
+    }
+
+    default void setCostumes(Costumes costumes) {
+    }
 }

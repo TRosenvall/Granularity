@@ -69,7 +69,7 @@ public final class GranularityOverlays {
      * and a shadow is dark on slate and dark on marble alike.
      */
     public static final DeferredHolder<Overlay, Overlay> CRACKED = OVERLAYS.register("cracked",
-            () -> Overlay.tinted(ResourceLocation.fromNamespaceAndPath(Granularity.MODID, "block/cobblestone_cracked")));
+            () -> Overlay.damage(ResourceLocation.fromNamespaceAndPath(Granularity.MODID, "block/cobblestone_cracked")));
 
     private GranularityOverlays() {
     }
