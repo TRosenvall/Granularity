@@ -200,9 +200,40 @@ public final class Composition {
         return counts;
     }
 
-    /** How many slots are free — the block's porosity (findings §6.1). */
+    /**
+     * How much of the block is pore rather than solid — its porosity (findings §6.1).
+     *
+     * <p>Counts water as well as air, because a pore that has filled with water is still a pore. The
+     * distinction that matters to a mason is how much rock is there, and that does not change when
+     * it rains. {@link #freeSlots} is the other question — how much room is <i>left</i> — and the two
+     * are only the same number in dry rock.
+     */
     public int porosity() {
+        return count(GrainClass.AIR) + count(GrainClass.WATER);
+    }
+
+    /**
+     * How many pores are still empty, which is also how much water this block can take.
+     *
+     * <p>Findings §6.2 spends a paragraph on this: budgeting free space against only rock and water,
+     * and forgetting a third occupant, drove the prototype's {@code free()} negative. So this is
+     * defined as "not occupied" rather than as a subtraction from nine, and a new grain class costs
+     * nothing here.
+     */
+    public int freeSlots() {
         return count(GrainClass.AIR);
+    }
+
+    /**
+     * How many slots hold water — the block's water content in drops.
+     *
+     * <p>This number is also the block's <i>level</i>: design §7 maps nine drops onto a source block
+     * and fewer onto vanilla's flow levels, so the slot count and the fluid state are one quantity
+     * seen from two sides. Converting between them is {@link WaterLevels}'s job and belongs nowhere
+     * else.
+     */
+    public int water() {
+        return count(GrainClass.WATER);
     }
 
     /**

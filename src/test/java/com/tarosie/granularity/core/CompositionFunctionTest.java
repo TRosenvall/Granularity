@@ -37,15 +37,26 @@ class CompositionFunctionTest {
             int z = i * -53 + 900;
             Composition c = CompositionFunction.stone(x, y, z, SALT);
 
-            assertEquals(0, c.porosity(), "Phase 1 stone has no free slots; porosity is Phase 7");
+            // Porosity has arrived, so a free slot is expected rather than forbidden. Never all
+            // nine of them, though: a natural block keeps at least one grain, which is asserted in
+            // PorosityFieldTest rather than here.
+            //
+            // Water counts as a pore rather than as a fourth kind of thing: it is what a pore holds
+            // below the water table. The assertion left standing is the one that matters — a slot is
+            // a mineral or it is a pore, and there is no third possibility.
+
             for (int slot = 0; slot < Composition.SLOTS; slot++) {
                 GrainClass materialClass = c.classAt(slot);
-                assertTrue(materialClass == GrainClass.ROCK
+                assertTrue(materialClass == GrainClass.AIR
+                                || materialClass == GrainClass.WATER
+                                || materialClass == GrainClass.ROCK
                                 || materialClass == GrainClass.ORE
                                 || materialClass == GrainClass.PRECIOUS_ORE
                                 || materialClass == GrainClass.GEM,
                         "unexpected class in stone: " + materialClass);
-                assertTrue(c.grainAt(slot).clazz().isMineral(), "stone slots must hold minerals");
+                boolean pore = materialClass == GrainClass.AIR || materialClass == GrainClass.WATER;
+                assertTrue(pore || c.grainAt(slot).clazz().isMineral(),
+                        "a stone slot holds a mineral, or air or water in a pore");
             }
         }
     }
@@ -88,11 +99,22 @@ class CompositionFunctionTest {
         // Design §4's payoff -- standing on bedrock tells you the whole column's ore family --
         // only holds if the column agrees with the floor. Jitter reaching exactly zero at the
         // datum is what makes that true, so it is asserted rather than assumed.
+        int voids = 0;
         for (int i = 0; i < 300; i++) {
             int x = i * 149 - 8000;
             int z = i * -211 + 3000;
             Grain expected = CompositionFunction.bedrockStone(x, z, SALT);
             Composition c = CompositionFunction.stone(x, -64, z, SALT);
+            // A position whose only grains are minerals has no rock to agree with the map, and that
+            // is allowed: the datum is where porous sedimentary rock is most porous, so eight pores
+            // and a single ore grain is a composition that happens. Counted rather than skipped, and
+            // the count is asserted below -- "no rock here" is also what a broken porosity field
+            // would say at every position, and a bare continue would let that pass as 300 quiet
+            // successes.
+            if (c.distinctGrains(GrainClass.ROCK) == 0) {
+                voids++;
+                continue;
+            }
             // Rock only. Mineral slots draw from their own province fields, so an ore slot at
             // bedrock is under no obligation to match the rock around it -- that independence is
             // the point, and asserting over every slot would forbid it.
@@ -105,6 +127,8 @@ class CompositionFunctionTest {
                 }
             }
         }
+        assertTrue(voids < 30, "the bedrock datum is rock with the odd pore in it, not a sponge: "
+                + voids + " of 300 positions held no rock at all");
     }
 
     @Test

@@ -119,6 +119,15 @@ public record CompositionLayers(int baseTint, Family ore, Family precious, Famil
             rockTint = averageTint(ids, counts, distinct, null);
         }
         int baseTint = rockTint < 0 ? NO_TINT : LatticeColour.rockTint(rockTint);
+        // Porous rock reads darker, which is the placeholder for a porosity overlay that does not
+        // exist yet. Air holds no colour and draws no layer, so before this a block that was a third
+        // void looked exactly like solid stone and there was no way to find one in the world at all.
+        //
+        // Shading the base rather than adding a sprite family, deliberately, and only until the real
+        // overlay is authored: a new family costs a tint index, nine sprites and a seventh overlay
+        // list, and none of that should be spent on a stand-in. Pores absorbing light is also the
+        // right direction to be wrong in.
+        baseTint = shadeByPores(baseTint, composition.freeSlots(), composition.water());
         // Rock averages -- one continuous stone surface whose colour shifts with the fields.
         // Minerals do not: they are discrete things sitting in it.
 
@@ -126,6 +135,65 @@ public record CompositionLayers(int baseTint, Family ore, Family precious, Famil
                 family(ids, counts, distinct, GrainClass.ORE),
                 family(ids, counts, distinct, GrainClass.PRECIOUS_ORE),
                 family(ids, counts, distinct, GrainClass.GEM));
+    }
+
+    /**
+     * Rock darkened in proportion to how much of it is not there, and darker again where the pores
+     * are full of water.
+     *
+     * <p>A third of the light at nine slots of void, which is enough to pick out a porous bed against
+     * tight rock beside it without turning it black — the cue has to survive being seen through a
+     * cave's gloom and beside a torch.
+     *
+     * <p>Wet pores take more than dry ones and pull the colour toward the water's own blue, so a bed
+     * below the water table does not read as merely porous. Both parts are real: wet rock genuinely
+     * is darker than the same rock dry, which is why a rained-on flagstone changes colour, and the
+     * blue is the water itself being visible in the pore. The cue matters more than usual here
+     * because water grains draw no overlay of their own — without it, an aquifer and a dry porous bed
+     * are the same picture.
+     *
+     * <p>Still the placeholder its predecessor was, and for the same reason: a real overlay family
+     * costs a tint index, nine sprites and a seventh overlay list, and a stand-in should not spend
+     * them.
+     */
+    private static int shadeByPores(int tint, int air, int water) {
+        int pores = air + water;
+        if (pores <= 0 || tint == NO_TINT) {
+            return tint;
+        }
+        // Square-rooted, not linear, and this is the fix for a cue nobody could see. Linearly, one
+        // wet pore in nine darkens the block by five percent, which is invisible on screen against a
+        // stone texture in cave light — and one pore is the common case, since most porous rock is
+        // porous by a slot or two rather than by half. The root lifts the bottom of the range where
+        // the reading has to happen without touching the top: one pore now reads at fifteen percent,
+        // while nine still lands where it did.
+        //
+        // A legibility curve rather than a physical one, and worth being honest about. What is being
+        // drawn is "there is water in this rock", which is a fact about the block, not a measurement
+        // of how much light its pores absorb.
+        // Two cues, two meanings, and keeping them apart is what fixed this.
+        //
+        // Darkness answers "how much rock is missing" and counts every pore the same, wet or dry.
+        // Colour answers "what is in the hole". Before, water darkened harder *and* tinted blue, so
+        // saturated rock at depth went almost black — the two cues piled onto the same channel and
+        // the deep world got gloomy for no extra information. Now a wet block and a dry block of the
+        // same porosity are equally dark and differ in hue, which is both easier to read and closer
+        // to true: it is the missing rock that stops the light, and the water that has a colour.
+        double openness = Math.sqrt(pores / (double) Composition.SLOTS);
+        double wetness = Math.sqrt(water / (double) Composition.SLOTS);
+        double keep = 1.0 - 0.40 * openness;
+        double blue = 0.45 * wetness;
+        int waterTint = Grains.WATER.tint();
+        int r = channel((tint >> 16) & 0xFF, (waterTint >> 16) & 0xFF, keep, blue);
+        int g = channel((tint >> 8) & 0xFF, (waterTint >> 8) & 0xFF, keep, blue);
+        int b = channel(tint & 0xFF, waterTint & 0xFF, keep, blue);
+        return (r << 16) | (g << 8) | b;
+    }
+
+    /** One channel dimmed by {@code keep} and then mixed {@code blue} of the way toward the water. */
+    private static int channel(int rock, int water, double keep, double blue) {
+        double dimmed = rock * keep;
+        return (int) Math.round(dimmed + (water - dimmed) * blue);
     }
 
     /**

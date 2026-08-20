@@ -2,12 +2,21 @@ package com.tarosie.granularity.content;
 
 import com.tarosie.granularity.core.Composition;
 import com.tarosie.granularity.core.CompositionFunction;
+import com.tarosie.granularity.core.GrainClass;
+import com.tarosie.granularity.core.WaterLevels;
 import com.tarosie.granularity.core.WorldSalt;
+import com.tarosie.granularity.world.GranularityWater;
+import com.tarosie.granularity.world.WaterTicker;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
@@ -50,5 +59,67 @@ public class NaturalStoneBlock extends Block {
         Composition composition = CompositionFunction.stone(
                 pos.getX(), pos.getY(), pos.getZ(), WorldSalt.ServerView.get().value());
         return CompositionDrops.toStacks(composition);
+    }
+
+    /**
+     * Water arriving next to rock is a disturbance, and the rock says so.
+     *
+     * <p>Without this the migration tier never runs for anything but mining. Breaking a block marks a
+     * patch, and that was the only trigger there was — so emptying a bucket onto porous stone did
+     * nothing at all, no matter how long you watched it. The rock has to notice water turning up
+     * beside it, and a neighbour change is precisely the game telling it so.
+     *
+     * <p>Filtered to water rather than marking on every update, because this fires for redstone, for
+     * a torch placed next door, for anything at all. Marking is cheap but it is not free, and a patch
+     * that has nothing to do still costs its quiet ticks before it is dropped.
+     */
+    @Override
+    protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                   BlockPos neighborPos, boolean movedByPiston) {
+        if (level instanceof ServerLevel server
+                && server.getFluidState(neighborPos).is(Fluids.WATER)) {
+            WaterTicker.disturb(server, pos);
+        }
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+    }
+
+    /**
+     * Breaking wet rock leaves its water behind, at the level the rock was holding.
+     *
+     * <p>Design §6, stated almost word for word: "breaking a moist block releases a partial water
+     * level that sits or sinks". The rock's water is slots, the released water is a vanilla fluid
+     * level, and {@link WaterLevels} is where those two readings of the same number meet — three
+     * drops in the pores come out as level-3 water and not as some separately chosen amount. What
+     * state that becomes is {@link WaterRelease}'s decision, which is where the conservation argument
+     * and the finite-fluid compat seam both live.
+     *
+     * <p>It drains away on its own, and that is correct rather than a shortcoming. What comes out is
+     * flowing water with no source feeding it, so it spreads, sinks and is gone — which is what a few
+     * drops squeezed out of a rock face should do. Water that stayed would be water the block never
+     * had.
+     *
+     * <p>This hook rather than {@code getDrops}, because water is not a drop: {@link GrainClass#WATER}
+     * yields no item by design, so there is nothing for a loot list to carry. It is also not
+     * {@code onRemove}, which fires for every state change and would have to work out which ones were
+     * breakages. This one is asked precisely what replaces the block.
+     */
+    @Override
+    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player,
+                                       boolean willHarvest, FluidState fluid) {
+        if (level instanceof ServerLevel server && WorldSalt.ServerView.isPresent()) {
+            long salt = WorldSalt.ServerView.get().value();
+            // What the block is *actually* holding, not what the field says it would hold if nobody
+            // had been here: water may have migrated in, and releasing the baseline instead would
+            // quietly destroy the difference.
+            int drops = GranularityWater.waterAt(server, pos, salt);
+            GranularityWater.forget(server, pos);
+            // A new hole in the rock is a disturbance whether or not this block was wet — water in
+            // the rock around it now has somewhere to go.
+            WaterTicker.disturb(server, pos);
+            if (drops > 0) {
+                return level.setBlock(pos, WaterRelease.stateFor(drops), Block.UPDATE_ALL);
+            }
+        }
+        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
     }
 }

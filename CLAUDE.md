@@ -29,6 +29,7 @@ Where to look, by area:
 | Blocks, forms, finishes | `docs/CRAFTED_BLOCKS.md`, `docs/MATERIAL_MODEL.md` |
 | Stonework styles, or adding a texture | `docs/STONEWORK_STYLES.md` — measure with `tools/style_survey.py` **before** authoring a sprite |
 | Worldgen coverage and vanilla suppression | `docs/BLOCK_COVERAGE.md` |
+| Porosity, the water table, anything wet | `docs/HYDROLOGY.md` |
 | Inventory and logistics | `docs/HAULING.md` |
 | Costumes, regions, the transmog screen | `docs/TRANSMOGRIFICATION.md` |
 | Material properties, alloying, the furnace | `docs/ALLOYS.md` |

@@ -48,6 +48,16 @@ public final class Rng {
     public static final int STREAM_DIRECTION = 1;
     public static final int STREAM_MAGNITUDE = 2;
     public static final int STREAM_CREEP = 3;
+
+    /**
+     * The voxel migration rule's three draws: which neighbour receives, how much goes, and the creep
+     * exception that lets still water settle. Ids 11–13 are the prototype's own — this rule is a
+     * port rather than a new layer, so it inherits the stream ids the reference ran on and the
+     * golden vectors that pin them.
+     */
+    public static final int STREAM_VOXEL_DIRECTION = 11;
+    public static final int STREAM_VOXEL_MAGNITUDE = 12;
+    public static final int STREAM_VOXEL_CREEP = 13;
     public static final int STREAM_PICKUP = 4;
     public static final int STREAM_DROP = 5;
     public static final int STREAM_RAINFALL = 6;
@@ -68,6 +78,29 @@ public final class Rng {
     public static final int STREAM_ORE_PROVINCE = 49;
     public static final int STREAM_PRECIOUS_PROVINCE = 50;
     public static final int STREAM_GEM_PROVINCE = 51;
+
+    /**
+     * The porosity layer, and the per-slot draw against it. Streams of their own, so adding porosity
+     * left every other draw in the composition function producing exactly what it produced before —
+     * only the slots air actually wins are different.
+     *
+     * <p>These are 52 and 53 because 47 and 48 were taken. An earlier version of this block declared
+     * them as 47 and 48 anyway, directly above the fields that already held those ids: Java takes the
+     * last assignment silently, so the porosity layer shared a stream with the slot-class draw and the
+     * air draw shared one with the bedrock type. Nothing failed — the world simply had porosity
+     * correlated with the ore it was supposed to be independent of. Adding an id means reading to the
+     * end of this list first; the compiler will not do it for you.
+     */
+    public static final int STREAM_POROSITY = 52;
+    public static final int STREAM_SLOT_AIR = 53;
+
+    /**
+     * The water table's regional swell, and the per-slot draw that decides whether a pore holds
+     * water or air. Downstream of the air draw and on streams of their own, so the porous rock is in
+     * the same places it was before there was any water in it — only what fills the pores changed.
+     */
+    public static final int STREAM_WATER_TABLE = 54;
+    public static final int STREAM_SLOT_WATER = 55;
 
     private Rng() {
     }
@@ -103,6 +136,30 @@ public final class Rng {
     public static long positionHash(long y, long x, long salt) {
         long h = mix64(salt ^ (x * K_X));
         return mix64(h ^ (y * K_Y));
+    }
+
+    /**
+     * The same hash in three dimensions, for the layers that are genuinely volumetric.
+     *
+     * <p>{@link #positionHash} is two-dimensional by contract — the prototype's grids were rows and
+     * columns — so height enters as a <b>per-layer salt</b> built from the same contracted routine
+     * rather than from a new ad-hoc mix. Nothing here needs golden vectors of its own to be
+     * trustworthy, because it is two applications of a routine that already has them.
+     *
+     * <p>Shared rather than reimplemented per caller. It was private to {@link CompositionFunction}
+     * until the migration rule needed it too, and two copies of a world-defining hash is exactly the
+     * kind of thing that drifts silently: the second copy works, the worlds differ, and no test
+     * compares them. The composition golden pins this one for both.
+     *
+     * @param x world x
+     * @param y world height
+     * @param z world z
+     */
+    public static long positionHash(long x, long y, long z, long salt) {
+        long layerSalt = positionHash(y, 0L, salt);
+        // Rng's (y, x) order is the prototype's row/column indexing: its y is world z. The
+        // transposition happens here, once, at the boundary between world space and the contract.
+        return positionHash(z, x, layerSalt);
     }
 
     /**

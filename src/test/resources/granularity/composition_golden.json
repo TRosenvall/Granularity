@@ -103,16 +103,16 @@
       "z": 0,
       "slots": [
         15,
-        14,
-        14,
-        14,
-        15,
+        1,
+        1,
         14,
         15,
+        1,
+        1,
         14,
         14
       ],
-      "describe": "Composition[granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:shale, granularity:mudstone, granularity:shale, granularity:shale]"
+      "describe": "Composition[granularity:mudstone, granularity:water, granularity:water, granularity:shale, granularity:mudstone, granularity:water, granularity:water, granularity:shale, granularity:shale]"
     },
     {
       "x": 0,
@@ -136,17 +136,17 @@
       "y": -64,
       "z": 0,
       "slots": [
+        1,
+        1,
         14,
         14,
         14,
+        1,
         14,
         14,
-        14,
-        14,
-        14,
-        14
+        1
       ],
-      "describe": "Composition[granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale, granularity:shale]"
+      "describe": "Composition[granularity:water, granularity:water, granularity:shale, granularity:shale, granularity:shale, granularity:water, granularity:shale, granularity:shale, granularity:water]"
     },
     {
       "x": 1,
@@ -155,15 +155,15 @@
       "slots": [
         15,
         15,
-        15,
-        15,
+        1,
+        1,
         14,
-        14,
-        14,
+        1,
+        1,
         15,
         14
       ],
-      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:shale]"
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:water, granularity:water, granularity:shale, granularity:water, granularity:water, granularity:mudstone, granularity:shale]"
     },
     {
       "x": -1,
@@ -172,15 +172,15 @@
       "slots": [
         15,
         15,
-        15,
+        1,
+        1,
         14,
         14,
-        14,
-        15,
-        14,
+        1,
+        1,
         15
       ],
-      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:shale, granularity:shale, granularity:shale, granularity:mudstone, granularity:shale, granularity:mudstone]"
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:water, granularity:water, granularity:shale, granularity:shale, granularity:water, granularity:water, granularity:mudstone]"
     },
     {
       "x": 127,
@@ -223,32 +223,32 @@
       "slots": [
         17,
         17,
+        1,
+        1,
+        1,
+        1,
         17,
-        17,
-        17,
-        17,
-        17,
-        21,
+        1,
         17
       ],
-      "describe": "Composition[granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:conglomerate, granularity:coal, granularity:conglomerate]"
+      "describe": "Composition[granularity:conglomerate, granularity:conglomerate, granularity:water, granularity:water, granularity:water, granularity:water, granularity:conglomerate, granularity:water, granularity:conglomerate]"
     },
     {
       "x": 512,
       "y": -63,
       "z": 512,
       "slots": [
-        12,
-        18,
-        18,
-        12,
-        18,
+        1,
+        1,
         18,
         12,
+        18,
+        1,
         12,
-        12
+        1,
+        1
       ],
-      "describe": "Composition[granularity:sandstone, granularity:iron, granularity:iron, granularity:sandstone, granularity:iron, granularity:iron, granularity:sandstone, granularity:sandstone, granularity:sandstone]"
+      "describe": "Composition[granularity:water, granularity:water, granularity:iron, granularity:sandstone, granularity:iron, granularity:water, granularity:sandstone, granularity:water, granularity:water]"
     },
     {
       "x": -777,
@@ -256,16 +256,16 @@
       "z": 1313,
       "slots": [
         36,
+        0,
         36,
         36,
         36,
+        1,
         36,
-        36,
-        36,
-        36,
-        36
+        1,
+        0
       ],
-      "describe": "Composition[granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite, granularity:calcite]"
+      "describe": "Composition[granularity:calcite, granularity:air, granularity:calcite, granularity:calcite, granularity:calcite, granularity:water, granularity:calcite, granularity:water, granularity:air]"
     },
     {
       "x": 384,
@@ -308,15 +308,15 @@
       "slots": [
         15,
         15,
+        1,
         15,
+        1,
+        1,
         15,
-        15,
-        15,
-        15,
-        15,
+        1,
         15
       ],
-      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone]"
+      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:water, granularity:mudstone, granularity:water, granularity:water, granularity:mudstone, granularity:water, granularity:mudstone]"
     },
     {
       "x": 64,
@@ -340,17 +340,17 @@
       "y": -64,
       "z": -64,
       "slots": [
+        1,
+        12,
+        1,
+        1,
+        1,
         18,
         12,
         12,
-        12,
-        18,
-        18,
-        12,
-        12,
-        12
+        1
       ],
-      "describe": "Composition[granularity:iron, granularity:sandstone, granularity:sandstone, granularity:sandstone, granularity:iron, granularity:iron, granularity:sandstone, granularity:sandstone, granularity:sandstone]"
+      "describe": "Composition[granularity:water, granularity:sandstone, granularity:water, granularity:water, granularity:water, granularity:iron, granularity:sandstone, granularity:sandstone, granularity:water]"
     },
     {
       "x": 9001,
@@ -375,16 +375,16 @@
       "z": 6789,
       "slots": [
         15,
+        1,
+        1,
         15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        15,
-        18
+        1,
+        1,
+        1,
+        1,
+        1
       ],
-      "describe": "Composition[granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:iron]"
+      "describe": "Composition[granularity:mudstone, granularity:water, granularity:water, granularity:mudstone, granularity:water, granularity:water, granularity:water, granularity:water, granularity:water]"
     },
     {
       "x": 256,
@@ -408,17 +408,17 @@
       "y": -8,
       "z": 8,
       "slots": [
-        20,
+        1,
         14,
         15,
+        1,
+        1,
+        1,
         15,
-        14,
         15,
-        15,
-        15,
-        15
+        1
       ],
-      "describe": "Composition[granularity:zinc, granularity:shale, granularity:mudstone, granularity:mudstone, granularity:shale, granularity:mudstone, granularity:mudstone, granularity:mudstone, granularity:mudstone]"
+      "describe": "Composition[granularity:water, granularity:shale, granularity:mudstone, granularity:water, granularity:water, granularity:water, granularity:mudstone, granularity:mudstone, granularity:water]"
     },
     {
       "x": 2047,
@@ -428,14 +428,14 @@
         16,
         16,
         16,
+        1,
         16,
         16,
         16,
-        16,
-        16,
-        16
+        1,
+        1
       ],
-      "describe": "Composition[granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk, granularity:chalk]"
+      "describe": "Composition[granularity:chalk, granularity:chalk, granularity:chalk, granularity:water, granularity:chalk, granularity:chalk, granularity:chalk, granularity:water, granularity:water]"
     }
   ]
 }

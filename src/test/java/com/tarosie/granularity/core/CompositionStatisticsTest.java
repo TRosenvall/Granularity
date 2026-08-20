@@ -38,14 +38,22 @@ class CompositionStatisticsTest {
                     }
                 }
             }
-            oreFraction[d] = counts[GrainClass.ORE.ordinal()] / (double) total;
-            System.out.printf(Locale.ROOT, "  %5d  %.4f  %.4f   %.5f  %.5f%n", y,
-                    counts[GrainClass.ROCK.ordinal()] / (double) total,
+            // Measured against the *solid* slots, not against all nine. Porosity takes slots from
+            // everything equally — porous rock holds proportionally less of every mineral, which is
+            // what "the free slots are the porosity" means — so counting air in the denominator would
+            // make this read as ore having grown when nothing about ore changed. What the assertion is
+            // really about is whether minerals swamp the rock they sit in, and that is a question
+            // about the solid part.
+            long solid = total - counts[GrainClass.AIR.ordinal()];
+            oreFraction[d] = counts[GrainClass.ORE.ordinal()] / (double) solid;
+            System.out.printf(Locale.ROOT, "  %5d  %.4f  %.4f   %.5f  %.5f   (air %.4f)%n", y,
+                    counts[GrainClass.ROCK.ordinal()] / (double) solid,
                     oreFraction[d],
-                    counts[GrainClass.PRECIOUS_ORE.ordinal()] / (double) total,
-                    counts[GrainClass.GEM.ordinal()] / (double) total);
+                    counts[GrainClass.PRECIOUS_ORE.ordinal()] / (double) solid,
+                    counts[GrainClass.GEM.ordinal()] / (double) solid,
+                    counts[GrainClass.AIR.ordinal()] / (double) total);
 
-            assertTrue(counts[GrainClass.ROCK.ordinal()] / (double) total > 0.7,
+            assertTrue(counts[GrainClass.ROCK.ordinal()] / (double) solid > 0.7,
                     "stone should still be mostly rock at y=" + y);
             assertTrue(oreFraction[d] > 0.001, "residual ore floor should never vanish at y=" + y);
         }
