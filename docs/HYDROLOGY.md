@@ -256,6 +256,79 @@ section in the world randomly ticking, since natural stone is what the world is 
 checks for an open face first, six block-state lookups, and throws out every buried block before
 anything is derived.
 
+## The atmosphere
+
+Design §11, and the half of the cycle that happens in the sky. Findings §5.1 decided the architecture
+before any of it was written: rain activates **18–40% of the loaded world**, "rain is not near
+anything — it is everywhere", so the block tier cannot carry it. **Rain enters at the field tier.**
+
+**`Wind`** — curl noise plus a prevailing bias, drifting slowly. Curl specifically, because a wind
+made of two independent noise fields has *divergence*: some cells take in more than they give out,
+advection piles humidity there permanently, and you get stationary fog banks no weather explains.
+`∇·(∇×ψ) = 0` makes that impossible by construction rather than by tuning.
+
+**`HumidityTransport`** — advect, then condense, at 1 Hz over one cell per chunk. Integer drops
+throughout, so a drop that evaporates off a lake, crosses the sky, falls as rain, soaks into rock and
+seeps out at a spring is *one drop the whole way*. The findings §6.2 convergence trap reappears
+unchanged in a new medium, so the fix is the same: one direction per pass.
+
+**`LevelHumidityGrid`** — capacity is where weather comes from, and it is two terms: warmth, and
+**height of the ground**. Air lifted over a range cools, capacity falls below what it already carries,
+the excess rains on the windward slope, and what crosses is dry. The desert behind a mountain is not
+a placement rule — it is arithmetic about how much water cold air holds.
+
+The baseline is measured against the capacity a column would have at **sea level**, not its own. That
+correction is why the world rains at all: scaling by local capacity double-counts elevation, so high
+air arrived pre-shrunk and could never cross its own line. Every reading sat near a fifth of capacity
+and nothing condensed. Measured after the fix:
+
+| | baseline | capacity | rains |
+|---|---|---|---|
+| warm wet lowland, y=70 | 343 | 385 | no |
+| the same air at y=110 | 343 | 265 | **yes** |
+| temperate hills, y=130 | 208 | 164 | **yes** |
+| desert, y=70 | 242 | 672 | no |
+
+**`WeatherDisplay`** — vanilla's weather cycle is switched off, because it is a coin flip on a timer
+that rains on deserts. Rain level is set from the field at the player's column and eased in. Vanilla's
+rain is one number per *level*, not per chunk, so this is right where the player is and approximate
+elsewhere; per-chunk visuals need the field synced to the client.
+
+## Drips, and what a single drop is
+
+**One drop is a drip; two or more is a block.** Timothy's rule, and it settles three things that were
+each being handled ad hoc.
+
+Level-1 water is the one fluid state that reliably looks like nothing happened — a nearly invisible
+film that vanilla erases about five ticks later — so never placing it means every block placed is one
+somebody can see. Ambient weeping needed a hand-written particles-only exception for cost; now it
+falls out, because a weep is one drop. And single-drop releases were most of the block placements.
+
+**Sustained flow is not a bigger release; it is a release that happens again before the last one has
+gone.** This is the whole difference between a drip and a spring, and it was learned the hard way
+twice. Vanilla erases unfed water in about five ticks, so a face topped up *every tick* accumulates —
+the level climbs, the block fills, it flows downhill — while the same total delivered once every
+twenty minutes never amounts to anything. It is why breaking a rock made saturated faces gush: that
+started a patch, and patches run every tick.
+
+So random ticks **discover** springs and a bounded set of them runs every tick. The bound is what makes
+this safe where self-scheduling was not: 24 per level, and a face needs 4+ pores to qualify. A cap has
+a fixed point by construction — which is exactly what self-scheduling lacked, since blocks only
+stopped weeping when they dried out and recharge kept them wet. That ran to 465 emissions a tick and a
+server 329 ticks behind.
+
+## Clouds, and why they cannot be blocks
+
+Asked for and rejected with numbers, so it is not proposed again. Cloud blocks attenuating one light
+level each is a real mechanic — `getLightBlock` is overridable and cached per state — but the sky is
+17×17 chunks, or **73,984 columns**: one block each is 74,000 blocks and fifteen layers is 1.1
+million. Worse, each placement triggers a skylight recalculation down the whole column, and clouds
+have to move with the wind, so it is that cost continuously rather than once. Ambient weeping at 465
+blocks a tick — with no lighting propagation at all — already put the server 329 ticks behind.
+
+Clouds, sky darkening and per-chunk rain all want the same enabling piece instead: **the humidity
+field synced to the client**, and rendering from it. No blocks, no lighting, nothing saved.
+
 ## Not built yet
 
 - **Springs at outcrops.** §6.3's payoff. The beds exist and seepage exists; what is missing is

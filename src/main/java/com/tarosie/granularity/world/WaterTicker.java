@@ -144,10 +144,90 @@ public final class WaterTicker {
         }
     }
 
+    /**
+     * Pore space a face needs before it counts as a spring rather than a damp patch.
+     *
+     * <p>Half the block. Rock this open, saturated and cut through by a cave is a genuine aquifer
+     * face, and there are far fewer of them than there are merely damp ones — which is what keeps the
+     * set below small without a rule that says so.
+     */
+    public static final int SPRING_PORES = 4;
+
+    /**
+     * The most natural springs a level runs at once.
+     *
+     * <p>A hard cap, and the thing that makes this safe where self-scheduling was not. Ambient weeping
+     * once let every exposed wet block promote itself to a half-second timer, with no fixed point:
+     * blocks only stopped if they dried out, and recharge kept them wet. Measured at 465 emissions a
+     * tick and a server 329 ticks behind.
+     *
+     * <p>A cap has a fixed point by construction. It also happens to be true to the world — a cave
+     * system has a few springs in it, not a thousand — so the bound is not merely a budget, it is
+     * roughly the right number.
+     */
+    private static final int MAX_SPRINGS = 24;
+
+    /** Positions discharging on their own, discovered by random ticks. Insertion-ordered, capped. */
+    private static final Map<ResourceKey<Level>, Set<Long>> SPRINGS = new HashMap<>();
+
     /** Chunks known to hold deviations, so the decay pass visits those and nothing else. */
     private static final Map<ResourceKey<Level>, Set<Long>> DEVIATED = new HashMap<>();
 
     private WaterTicker() {
+    }
+
+    /**
+     * Offer a wet, open, porous face as a natural spring.
+     *
+     * <p>Called from a random tick, so discovery is spread over the loaded world at a rate the game
+     * already budgets. Ignored once the level is at its cap, which is what bounds this: the first
+     * faces found keep running until they stop qualifying, and the rest stay damp rock.
+     */
+    public static void offerSpring(ServerLevel level, BlockPos pos) {
+        Set<Long> springs = SPRINGS.computeIfAbsent(level.dimension(), key -> new LinkedHashSet<>());
+        if (springs.size() >= MAX_SPRINGS) {
+            return;
+        }
+        springs.add(pos.asLong());
+    }
+
+    /** How many natural springs are running, for the diagnostic command. */
+    public static int activeSprings(ServerLevel level) {
+        Set<Long> springs = SPRINGS.get(level.dimension());
+        return springs == null ? 0 : springs.size();
+    }
+
+    /**
+     * Discharge every natural spring, once per tick.
+     *
+     * <p>Once per <i>tick</i> is the whole point. Vanilla erases unfed flowing water about five ticks
+     * after it is placed, so a spring that tops its outlet up every tick accumulates — the level
+     * climbs, the block fills, and it starts to flow downhill like water. A release of the same total
+     * size delivered once a minute would be erased between every one and never amount to anything.
+     * That difference, not the amount, is why breaking a rock made these faces gush.
+     */
+    private static void runSprings(ServerLevel level, long salt) {
+        Set<Long> springs = SPRINGS.get(level.dimension());
+        if (springs == null || springs.isEmpty()) {
+            return;
+        }
+        LevelWaterVolume volume = new LevelWaterVolume(level, salt);
+        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
+        Iterator<Long> iterator = springs.iterator();
+        while (iterator.hasNext()) {
+            cursor.set(BlockPos.of(iterator.next()));
+            if (!level.hasChunk(cursor.getX() >> 4, cursor.getZ() >> 4)) {
+                // Unloaded. Forgotten rather than kept, so the cap is not held by ground nobody is
+                // near; a random tick will find it again when somebody comes back.
+                iterator.remove();
+                continue;
+            }
+            if (!volume.contains(cursor.getX(), cursor.getY(), cursor.getZ())
+                    || WaterExchange.seep(level, volume, cursor) <= 0) {
+                // Broken, sealed, or dry. It has stopped being a spring, so it stops costing one.
+                iterator.remove();
+            }
+        }
     }
 
     /**
@@ -182,6 +262,9 @@ public final class WaterTicker {
         // deliberately seeds no patches — so putting this below the "no active patches" return meant
         // the one mechanism it was built to observe was the one it could never see.
         reportWeeps(level.getGameTime());
+        if (WorldSalt.ServerView.isPresent()) {
+            runSprings(level, WorldSalt.ServerView.get().value());
+        }
 
         Map<Long, Patch> active = ACTIVE.get(level.dimension());
         if (active == null || active.isEmpty()) {
@@ -366,6 +449,7 @@ public final class WaterTicker {
         if (event.getLevel() instanceof ServerLevel level) {
             ACTIVE.remove(level.dimension());
             DEVIATED.remove(level.dimension());
+            SPRINGS.remove(level.dimension());
         }
     }
 
@@ -395,13 +479,15 @@ public final class WaterTicker {
         lastWeepReport = tally[0];
         Granularity.LOGGER.info(
                 "Weep tally: {} random ticks on wet-capable stone, {} with an open face, {} holding "
-                        + "water, {} emitted.", tally[0], tally[1], tally[2], tally[3]);
+                        + "water, {} emitted, {} of those placing a block.",
+                tally[0], tally[1], tally[2], tally[3], tally[4]);
     }
 
     /** Drop everything, for a server shutting down or a test starting clean. */
     public static void clear() {
         ACTIVE.clear();
         DEVIATED.clear();
+        SPRINGS.clear();
     }
 
     /** How many patches are queued in a level, for the diagnostic command. */

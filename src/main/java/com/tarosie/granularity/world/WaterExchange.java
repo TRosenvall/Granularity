@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
@@ -55,17 +56,27 @@ public final class WaterExchange {
      * drop is too small to see. Counting each stage apart tells them apart. Design note in CLAUDE.md:
      * log a count of what a pass actually did, and check the number.
      */
+    /**
+     * A weep happens on a random tick with odds of {@code pores in WEEP_ODDS}.
+     *
+     * <p>The rate limit lives here rather than in the amount. Nine-pore rock weeps on half its visits,
+     * one-pore rock on a eighteenth of them, and since most exposed rock is tight the total across the
+     * loaded world stays small while genuine aquifer faces run visibly.
+     */
+    private static final int WEEP_ODDS = 18;
+
     private static long ticksSeen;
     private static long withOpenFace;
     private static long withWater;
     private static long emitted;
+    private static long blocksPlaced;
 
     private WaterExchange() {
     }
 
-    /** Ambient weep counters: random ticks seen, of those open-faced, watered, and emitting. */
+    /** Ambient weep counters: ticks seen, open-faced, watered, emitting, and placing a block. */
     public static long[] weepTally() {
-        return new long[]{ticksSeen, withOpenFace, withWater, emitted};
+        return new long[]{ticksSeen, withOpenFace, withWater, emitted, blocksPlaced};
     }
 
     /**
@@ -93,12 +104,16 @@ public final class WaterExchange {
         }
 
         if (!fluid.isSource()) {
-            // Finite water, genuinely handed over: what is left stays above.
+            // Finite water, genuinely handed over: what is left stays above — unless what is left is
+            // a single drop, which is a drip rather than a puddle and does not get a block either.
             int left = available - moved;
-            BlockState remaining = left <= 0
+            BlockState remaining = WaterRelease.isDrip(left) || left <= 0
                     ? net.minecraft.world.level.block.Blocks.AIR.defaultBlockState()
                     : WaterRelease.stateFor(left);
             level.setBlock(above, remaining, Block.UPDATE_ALL);
+            if (WaterRelease.isDrip(left)) {
+                WaterRelease.drip(level, above);
+            }
         }
         volume.setWater(pos.getX(), pos.getY(), pos.getZ(),
                 volume.water(pos.getX(), pos.getY(), pos.getZ()) + moved);
@@ -193,15 +208,12 @@ public final class WaterExchange {
             return 0;
         }
 
-        level.setBlock(outlet, WaterRelease.stateFor(already + released), Block.UPDATE_ALL);
+        // A block or a drip, by the one rule in WaterRelease: a single drop is not a puddle. Either
+        // way the rock gives it up and the ledger records it — what changes is whether the world gets
+        // water it can hold or water it can only see.
+        WaterRelease.releaseInto(level, outlet, released, already);
         volume.setWater(x, y, z, volume.water(x, y, z) - released);
         volume.drain(released);
-        // The same argument as soaking, from the other side: a seep places a thin fluid block that
-        // vanilla will erase on its next tick, so without a cue the whole event can happen between
-        // two frames and leave nothing behind.
-        level.sendParticles(ParticleTypes.DRIPPING_WATER,
-                outlet.getX() + 0.5, outlet.getY() + 0.5, outlet.getZ() + 0.5,
-                Math.min(released, 3), 0.2, 0.2, 0.2, 0.0);
         return released;
     }
 
@@ -234,7 +246,7 @@ public final class WaterExchange {
      *
      * @return drops emitted, which is 0 or 1
      */
-    public static int weep(ServerLevel level, BlockPos pos, long salt) {
+    public static int weep(ServerLevel level, BlockPos pos, long salt, RandomSource random) {
         ticksSeen++;
         // The open face is asked FIRST, and the order is the whole cost of this feature.
         //
@@ -250,6 +262,14 @@ public final class WaterExchange {
             return 0;
         }
         withOpenFace++;
+
+        // How often, rather than how much. Discharge scales with pore space and so does the chance of
+        // weeping at all, so a bed that gives a lot gives it often and tight rock seldom does anything
+        // — and the cost across the loaded world stays bounded, because most exposed rock is tight.
+        int pores = GranularityWater.poreSpaceAt(level, pos, salt);
+        if (pores <= 0 || random.nextInt(WEEP_ODDS) >= pores) {
+            return 0;
+        }
         FluidState standing = level.getFluidState(outlet);
         int already = standing.is(Fluids.WATER)
                 ? WaterLevels.dropsFor(standing.getAmount(), standing.isSource())
@@ -266,13 +286,22 @@ public final class WaterExchange {
         }
         withWater++;
 
-        level.setBlock(outlet, WaterRelease.stateFor(already + 1), Block.UPDATE_CLIENTS);
-        // Scheduled by hand, because the placement above deliberately told no neighbours. Without
-        // this the block would sit there un-ticked and never flow or fade.
-        level.scheduleTick(outlet, Fluids.WATER, Fluids.WATER.getTickDelay(level));
-        level.sendParticles(ParticleTypes.DRIPPING_WATER,
-                outlet.getX() + 0.5, outlet.getY() + 0.5, outlet.getZ() + 0.5,
-                1, 0.2, 0.2, 0.2, 0.0);
+        // A drip, always — a random tick is one *sample* of throughflow, not a flow.
+        //
+        // Emitting the rock's full discharge here was tried and looks wrong for a reason worth
+        // writing down: our drops map onto vanilla's fluid amount, so a two-drop release renders as
+        // amount 2, which is a thin film. A film placed once every twenty minutes and erased five
+        // ticks later reads as worse than a drip, not better. Sustained flow is not a bigger single
+        // release; it is a release that happens again before the last one has gone.
+        //
+        // So a face that could really sustain one is offered to WaterTicker as a spring, and the
+        // spring tier discharges it every tick — which is exactly why breaking a rock nearby made
+        // these same blocks gush. That was a patch running, and now they can have one without the
+        // pickaxe.
+        if (pores >= WaterTicker.SPRING_PORES) {
+            WaterTicker.offerSpring(level, pos);
+        }
+        WaterRelease.drip(level, outlet);
         emitted++;
         return 1;
     }

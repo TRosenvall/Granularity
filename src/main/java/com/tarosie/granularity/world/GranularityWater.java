@@ -100,6 +100,16 @@ public final class GranularityWater {
     }
 
     /**
+     * How much of a block is pore rather than rock — what carries flow through saturated stone.
+     *
+     * <p>Cheap enough to ask on a random tick because it is one derivation and the callers gate on an
+     * open face first.
+     */
+    public static int poreSpaceAt(ServerLevel level, BlockPos pos, long salt) {
+        return CompositionFunction.stone(pos.getX(), pos.getY(), pos.getZ(), salt).porosity();
+    }
+
+    /**
      * Forget any deviation stored against a position, because the block it described is gone.
      *
      * <p>Left behind, the entry would describe water in a block that no longer has pores to hold it,

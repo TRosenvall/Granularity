@@ -102,6 +102,17 @@ public final class Rng {
     public static final int STREAM_WATER_TABLE = 54;
     public static final int STREAM_SLOT_WATER = 55;
 
+    /**
+     * The atmosphere (design §11): the wind's potential, the four advection draws, and the mixing
+     * that gives a front its edge.
+     *
+     * <p>Rainfall reuses id 6, the prototype's own rainfall stream, because it is the same quantity
+     * arriving by a different route.
+     */
+    public static final int STREAM_WIND = 56;
+    public static final int STREAM_HUMIDITY_ADVECTION = 57;
+    public static final int STREAM_HUMIDITY_MIXING = 61;
+
     private Rng() {
     }
 

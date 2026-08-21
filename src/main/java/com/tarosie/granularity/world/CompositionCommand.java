@@ -139,10 +139,21 @@ public final class CompositionCommand {
                     actual, composition.water());
             source.sendSuccess(() -> Component.literal(table).withStyle(ChatFormatting.DARK_AQUA),
                     false);
+            // The sky over this column, so the whole cycle is legible from one command: what the
+            // air holds, what it can hold before it rains, and what has lately fallen.
+            ChunkWeather sky = GranularityWeather.at(player.serverLevel(), pos.getX(), pos.getZ());
+            String weather = String.format(Locale.ROOT,
+                    "  sky: %s drops of vapour, %d fallen lately",
+                    sky.known() ? String.valueOf(sky.humidity()) : "unsimulated",
+                    sky.recentRain());
+            source.sendSuccess(() -> Component.literal(weather).withStyle(ChatFormatting.BLUE),
+                    false);
+
             long[] weeps = WaterExchange.weepTally();
-            String tier = "  active water patches " + WaterTicker.activePatches(player.serverLevel())
+            String tier = "  patches " + WaterTicker.activePatches(player.serverLevel())
+                    + ", natural springs " + WaterTicker.activeSprings(player.serverLevel())
                     + "  |  weeps: " + weeps[0] + " ticked, " + weeps[1] + " open-faced, "
-                    + weeps[2] + " wet, " + weeps[3] + " emitted";
+                    + weeps[2] + " wet, " + weeps[3] + " emitted, " + weeps[4] + " placed";
             source.sendSuccess(() -> Component.literal(tier).withStyle(ChatFormatting.DARK_GRAY),
                     false);
         }

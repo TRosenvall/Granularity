@@ -41,6 +41,7 @@ public class Granularity {
         com.tarosie.granularity.content.MossSpread.register(modEventBus);
         com.tarosie.granularity.content.GranularityMenus.register(modEventBus);
         com.tarosie.granularity.world.GranularityWater.register(modEventBus);
+        com.tarosie.granularity.world.GranularityWeather.register(modEventBus);
         com.tarosie.granularity.recipe.GranularityRecipes.register(modEventBus);
 
         modEventBus.addListener(SaltLifecycle::registerPayloads);

@@ -25,13 +25,14 @@ import net.minecraft.server.level.ServerLevel;
  * <p>So rainfall is sampled across a neighbourhood and averaged. A dry basin ringed by wet hills still
  * gets water; a desert in the middle of a desert gets very little, but never nothing.
  *
- * <h2>What this is standing in for</h2>
- * Design §11's humidity field: one scalar per column, advected by wind, sourced by evaporation and
- * sinking as rainfall. That is the real driver, and it is the same <i>shape</i> as this — spread
- * across biomes rather than clamped to them — so when it exists it replaces the sampling here and
- * nothing else changes.
+ * <h2>Weather, and what is left standing in</h2>
+ * Design §11's humidity field <b>now exists</b> ({@link GranularityWeather}), so the primary term is
+ * real: rain that has actually fallen on this chunk. The regional-climate reading it replaced is kept
+ * for the case where nothing has fallen lately, standing for the deep slow supply — water that fell
+ * somewhere else long ago and is still working through. That is what keeps a desert spring alive
+ * between storms years apart, and it is why the floor below is not zero.
  *
- * <p>Two factors this does not yet have, in the order they matter:
+ * <p>One factor this still does not have:
  * <ul>
  *   <li><b>Catchment area.</b> Why a spring near a valley floor gushes and one near a summit
  *       trickles, in identical rock and rain. §9's flow accumulation is exactly this machinery,
@@ -66,6 +67,24 @@ public final class Recharge {
     /** Drops per application where rainfall is at its heaviest. */
     private static final double WETTEST = 1.75;
 
+    /**
+     * How much a drop of recent rainfall adds to the recharge rate.
+     *
+     * <p>Small, because rain is counted per chunk and a storm deposits a great many drops over one.
+     * What matters is the shape: ground that has just been rained on recharges hard, and the rate
+     * falls away as the rainfall fades.
+     */
+    private static final double PER_DROP = 0.04;
+
+    /**
+     * What the climate alone is worth when no rain has fallen lately.
+     *
+     * <p>Under one, so a wet climate with no recent storm still recharges more slowly than the same
+     * place mid-downpour. Without this, weather would make no difference to a spring in a rainforest
+     * — the baseline would already be at the ceiling.
+     */
+    private static final double BETWEEN_STORMS = 0.5;
+
     private Recharge() {
     }
 
@@ -78,8 +97,19 @@ public final class Recharge {
      * every spring in the world into the same few speeds.
      */
     public static double dropsPerApplication(ServerLevel level, BlockPos pos) {
+        // What has actually fallen here lately, first. This is the seam the class note describes,
+        // now carrying real weather instead of a stand-in: rain reaches the ground through the field
+        // tier, and the aquifer is refilled by the water that landed on it rather than by the climate
+        // the biome table says the place has.
+        int fallen = GranularityWeather.recentRain(level, pos.getX(), pos.getZ());
+        if (fallen > 0) {
+            return Math.min(WETTEST * 2.0, DRIEST + fallen * PER_DROP);
+        }
+        // No recent rain: the deep, slow supply. Regional climate stands in for water that fell
+        // somewhere else long ago and is still working its way through, which is what keeps a desert
+        // spring alive between storms that may be years apart.
         double rainfall = regionalRainfall(level, pos);
-        return DRIEST + (WETTEST - DRIEST) * rainfall;
+        return DRIEST + (WETTEST - DRIEST) * rainfall * BETWEEN_STORMS;
     }
 
     /**
