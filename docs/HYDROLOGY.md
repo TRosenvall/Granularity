@@ -195,6 +195,67 @@ function of position, so it comes back identical — grains, porosity and baseli
 stone deliberately has no item form (design §2's player-placed exemption depends on natural and
 crafted being different blocks), so this is the intended route.
 
+## Springs
+
+A spring is a **condition, not a place**: saturated permeable rock meeting open air. Nothing marks
+one, so cutting deeper into a hillside makes the new face the spring — it satisfies the same
+condition the old one did. There is no object to place and none to destroy, which is what happens
+when you cut into a permeable streambed.
+
+**Discharge** is the rock's pore space. Free slots is the right measure for water *filling*
+unsaturated rock and is zero for rock already full, yet full rock is exactly what transmits water —
+that is what an aquifer is. A bed of porosity four gives water back four times as fast as porosity
+one, and that is visible in play.
+
+**Recharge** (`Recharge`) is keyed to regional rainfall, sampled across ±96 blocks rather than at the
+block. Sampling locally would be wrong in a way worth naming: **an oasis is a desert spring**. Real
+desert springs exist because recharge happened somewhere else, so a local reading would delete them.
+The floor is deliberately non-zero for the same reason. Rate runs 0.25–1.75 drops per second per
+block and is rounded stochastically (§12), so rainfall varies springs continuously rather than
+quantising them into two or three speeds.
+
+**Perennial versus intermittent falls out of those two rates in opposition** — recharge keeps up and
+the spring runs indefinitely; it does not and the bed drains locally, stops, and returns once it
+recovers. Neither case is coded for.
+
+**Ambient weeping.** Wet rock exposed to air weeps on its own, because discharge is not conditional
+on a disturbance. Random ticks *discover* a wet open face; from then on the block schedules its own
+next visit at an interval scaled by how much water it holds — 4 seconds when barely damp, half a
+second when nearly all water. Vanilla picks random-tick blocks uniformly, so the rate cannot be
+biased toward wet rock; scheduled ticks are how that bias is expressed, the same mechanism vanilla
+uses for fire and crops. A block only reschedules if it emitted, so drying out or being sealed in
+ends the chain.
+
+A weep **changes nothing** — no storage drawn down, no deviation written, no patch seeded. The drop
+is passing through, which is what throughflow at equilibrium means. That is not an optimisation; it
+avoids two real bugs. A weep that placed water with neighbour updates would trigger
+`neighborChanged`, which disturbs, which seeds a patch, which seeps, which places water, which
+disturbs again — every drip bootstrapping a self-sustaining patch until the queue swamped the
+player's own. And a weep that drew its block down would drain to zero with nothing to refill it,
+because recharge only runs inside patches.
+
+## Cost, measured
+
+Numbers, because two performance bugs here came from reasoning instead of counting.
+
+| | |
+|---|---|
+| one composition | ~4.6 µs |
+| a 62,000-block command scan | ~280 ms |
+| the same scan, second pass with the cache | ~15 ms |
+| one patch step (729 blocks) | ~4.4 ms |
+
+Three things follow. Compositions are cached **across ticks and volumes** — `stone()` is pure, so a
+cached answer cannot go stale while the world is the same world; there is no invalidation problem,
+only a size one. Searches prune by the water table, because each command wants one side of it and was
+deriving the half it would certainly reject. And the patch budget is two per tick, not four: four was
+a third of a 50 ms tick for a background feature.
+
+The same discipline governs ambient weeping. Enabling random ticks on natural stone makes nearly every
+section in the world randomly ticking, since natural stone is what the world is made of — so `weep`
+checks for an open face first, six block-state lookups, and throws out every buried block before
+anything is derived.
+
 ## Not built yet
 
 - **Springs at outcrops.** §6.3's payoff. The beds exist and seepage exists; what is missing is

@@ -23,6 +23,10 @@ public final class GranularityBlocks {
                     .mapColor(MapColor.STONE)
                     .strength(1.5F, 6.0F)
                     .sound(SoundType.STONE)
+                    // Random ticks so wet rock can weep on its own. Vanilla's own budget decides how
+                    // often — three per section per tick, near players only — which is exactly the
+                    // "random-tick-style budget" design §8 asks for, already tuned by somebody else.
+                    .randomTicks()
                     .requiresCorrectToolForDrops()));
 
     /**

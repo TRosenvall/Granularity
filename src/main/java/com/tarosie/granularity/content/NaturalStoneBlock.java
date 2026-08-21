@@ -6,10 +6,12 @@ import com.tarosie.granularity.core.GrainClass;
 import com.tarosie.granularity.core.WaterLevels;
 import com.tarosie.granularity.core.WorldSalt;
 import com.tarosie.granularity.world.GranularityWater;
+import com.tarosie.granularity.world.WaterExchange;
 import com.tarosie.granularity.world.WaterTicker;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -59,6 +61,80 @@ public class NaturalStoneBlock extends Block {
         Composition composition = CompositionFunction.stone(
                 pos.getX(), pos.getY(), pos.getZ(), WorldSalt.ServerView.get().value());
         return CompositionDrops.toStacks(composition);
+    }
+
+    /**
+     * The slowest a weeping face is revisited, in ticks — barely damp rock.
+     *
+     * <p>Four seconds. Below this a block is not really weeping, and the scheduled tick is costing
+     * more than the drip is worth.
+     */
+    private static final int SLOWEST_WEEP = 80;
+
+    /** The fastest, for rock that is nearly all water. Half a second. */
+    private static final int FASTEST_WEEP = 10;
+
+    /**
+     * Wet rock weeps where it meets the air, and wetter rock weeps more often.
+     *
+     * <p>What makes a cave below the water table actually wet, with nobody nearby to cause it. The
+     * rock is saturated and open to the air; that is a spring by definition and it should not wait for
+     * a pickaxe.
+     *
+     * <h2>Random ticks find it; scheduled ticks keep it</h2>
+     * Vanilla picks random-tick blocks uniformly inside a section, so the <i>rate</i> cannot be biased
+     * toward wet rock — a soaked block and a dry one are equally likely to be chosen, about once a
+     * minute each. That is far too slow to read as dripping, and there is no knob for it.
+     *
+     * <p>So a random tick is treated as <b>discovery</b>. Once a face is found to be wet and open, it
+     * schedules its own next visit, at an interval that scales with how much water it holds — see
+     * {@link #weepDelay}. Barely damp rock is revisited every four seconds; rock that is nearly all
+     * water, every half second. That is the "more likely the wetter it is" that random ticks cannot
+     * express, and it is how vanilla drives fire and crops.
+     *
+     * <p>It stops on its own. A block only reschedules if it actually emitted, so drying out or being
+     * sealed in ends the chain with no bookkeeping. One pending tick per block, saved with the chunk,
+     * and no queue that can grow.
+     */
+    @Override
+    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        weepAndReschedule(level, pos);
+    }
+
+    /** The scheduled visit set by {@link #weepAndReschedule}. Same work, on our own clock. */
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        weepAndReschedule(level, pos);
+    }
+
+    private void weepAndReschedule(ServerLevel level, BlockPos pos) {
+        if (!WorldSalt.ServerView.isPresent()) {
+            return;
+        }
+        long salt = WorldSalt.ServerView.get().value();
+        // Nothing is derived unless there is somewhere for water to go: weep checks for an open face
+        // first, which is six block-state lookups and throws out every buried block. Natural stone is
+        // what the world is made of, so this method runs on a great many blocks a tick.
+        if (WaterExchange.weep(level, pos, salt) <= 0) {
+            return;
+        }
+        if (level.getBlockTicks().hasScheduledTick(pos, this)) {
+            return;
+        }
+        level.scheduleTick(pos, this, weepDelay(GranularityWater.waterAt(level, pos, salt)));
+    }
+
+    /**
+     * How long until this face is worth visiting again, from how much water the rock holds.
+     *
+     * <p>Linear between the two bounds. Not a physical law — the honest quantity would be discharge
+     * per unit time, which the seepage rate already expresses — but the visible <i>rhythm</i> of
+     * dripping is what tells a player how wet a wall is, and rhythm is a frequency.
+     */
+    private static int weepDelay(int water) {
+        int held = Math.max(1, Math.min(Composition.SLOTS, water));
+        int span = SLOWEST_WEEP - FASTEST_WEEP;
+        return SLOWEST_WEEP - span * (held - 1) / (Composition.SLOTS - 1);
     }
 
     /**

@@ -139,7 +139,10 @@ public final class CompositionCommand {
                     actual, composition.water());
             source.sendSuccess(() -> Component.literal(table).withStyle(ChatFormatting.DARK_AQUA),
                     false);
-            String tier = "  active water patches " + WaterTicker.activePatches(player.serverLevel());
+            long[] weeps = WaterExchange.weepTally();
+            String tier = "  active water patches " + WaterTicker.activePatches(player.serverLevel())
+                    + "  |  weeps: " + weeps[0] + " ticked, " + weeps[1] + " open-faced, "
+                    + weeps[2] + " wet, " + weeps[3] + " emitted";
             source.sendSuccess(() -> Component.literal(tier).withStyle(ChatFormatting.DARK_GRAY),
                     false);
         }
@@ -183,10 +186,19 @@ public final class CompositionCommand {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int dx = -SEARCH; dx <= SEARCH; dx++) {
             for (int dz = -SEARCH; dz <= SEARCH; dz++) {
+                // Which heights are worth deriving at all. Free slots exist only above the water
+                // table — below it every pore is full — so the saturated half of the box is
+                // skipped before a composition is built rather than after. Measured at six
+                // microseconds a derivation over sixty thousand blocks, that half is worth having.
+                double table = WaterTable.elevation(origin.getX() + dx, origin.getZ() + dz, salt);
                 // Deeper than it is wide, because our stone is under whatever the surface rules put
                 // on top of it, and "dig down" is the answer often enough to search that way.
                 for (int dy = -DEPTH; dy <= SEARCH; dy++) {
-                    cursor.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
+                    int y = origin.getY() + dy;
+                    if (y < table) {
+                        continue;
+                    }
+                    cursor.set(origin.getX() + dx, y, origin.getZ() + dz);
                     if (!player.level().getBlockState(cursor).is(
                             com.tarosie.granularity.content.GranularityBlocks.NATURAL_STONE.get())) {
                         continue;
@@ -252,23 +264,23 @@ public final class CompositionCommand {
     }
 
     /**
-     * Builds the smallest arrangement that makes a spring happen, at rock where it can.
+     * Opens a real spring: saturated rock, cut so that it meets the air.
      *
-     * <p>Exists because the natural way to test this — pour water on the ground and look for it lower
-     * down — almost never works, for two reasons that are both correct behaviour. Water has to travel
-     * through <i>connected</i> porous rock, and roughly half the blocks in a porous bed have a free
-     * pore, so a run of four in a vertical line is about one chance in six; a single tight block stops
-     * it dead, which is what an aquiclude is. And the simulation only runs in a patch a few blocks
-     * across, so a chamber ten blocks down is never reached at all.
+     * <p>Places <b>no water</b>, and that is the whole point. A spring is not fed by something poured
+     * on top of it; it is the saturated zone meeting the surface, and what keeps it running is
+     * recharge from the catchment. Cut the face and water comes out, the way it does when you cut into
+     * a permeable streambed.
      *
-     * <p>So this removes both variables rather than faking either. It finds real porous rock, opens
-     * the block beneath it so there is somewhere for water to come out, and puts a source on top. One
-     * block of rock between the water and the air: infiltrate, then seep, with nothing in between to
-     * go wrong.
+     * <p>The first version of this looked for rock with <i>free</i> slots and put a source above it,
+     * which is a good infiltration test and a bad spring: free slots means unsaturated, unsaturated
+     * means above the water table, and above the water table the baseline is zero — so recharge, which
+     * only refills toward baseline, contributes nothing and the whole thing runs on the placed source.
+     * It was a spring in appearance and a watering can in fact.
      *
-     * <p><b>It cannot make rock porous.</b> Grains are derived from position, so there is nothing
-     * stored to remove one from — see {@code docs/HYDROLOGY.md}. This finds a place where the field
-     * already says yes.
+     * <p>So this looks for the opposite rock: <b>water in its pores already</b>, which is to say rock
+     * below the water table. Open the face beneath it and the spring is real, self-feeding, and
+     * perennial or intermittent according to whether recharge keeps up with the pore space — neither
+     * of which is decided here.
      */
     private static int buildSpring(CommandSourceStack source, ServerPlayer player) {
         if (!WorldSalt.ServerView.isPresent()) {
@@ -285,8 +297,15 @@ public final class CompositionCommand {
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         for (int dx = -SEARCH; dx <= SEARCH; dx++) {
             for (int dz = -SEARCH; dz <= SEARCH; dz++) {
+                // The mirror of the porous search: saturated rock is at or below the table, so
+                // everything above it is skipped before anything is derived.
+                double table = WaterTable.elevation(origin.getX() + dx, origin.getZ() + dz, salt);
                 for (int dy = -DEPTH; dy <= SEARCH; dy++) {
-                    cursor.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
+                    int y = origin.getY() + dy;
+                    if (y > table + 1) {
+                        continue;
+                    }
+                    cursor.set(origin.getX() + dx, y, origin.getZ() + dz);
                     if (!isNaturalStone(level, cursor)) {
                         continue;
                     }
@@ -299,7 +318,9 @@ public final class CompositionCommand {
                     }
                     Composition c = CompositionFunction.stone(
                             cursor.getX(), cursor.getY(), cursor.getZ(), salt);
-                    if (c.freeSlots() <= 0) {
+                    // Saturated rock, not merely porous: water already in the pores is what makes it
+                    // an aquifer rather than somewhere water could go.
+                    if (c.water() <= 0) {
                         continue;
                     }
                     int distance = dx * dx + dy * dy + dz * dz;
@@ -314,27 +335,27 @@ public final class CompositionCommand {
 
         if (roof == null) {
             source.sendFailure(Component.literal(
-                    "No porous rock nearby with open space above it and stone below. Try somewhere "
-                            + "with rock overhead — a hillside, or a few blocks underground."));
+                    "No saturated rock nearby with stone below it. A spring needs rock that already "
+                            + "holds water, which means at or below the water table — run "
+                            + "/granularity composition to see where that is here, and go down to it."));
             return 0;
         }
 
         BlockPos ceiling = roof;
         Composition composition = roofComposition;
-        // The chamber, then the water. In that order: filling first would let the source spread into
-        // the space before there was a roof between them.
+        // The chamber, and nothing else. No source is placed: the rock is already wet, and recharge
+        // is what keeps it that way.
         level.setBlock(ceiling.below(), Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        level.setBlock(ceiling.above(), Blocks.WATER.defaultBlockState(), Block.UPDATE_ALL);
         WaterTicker.disturb(level, ceiling);
 
         source.sendSuccess(() -> Component.literal(String.format(Locale.ROOT,
-                        "Spring rig at %s — %d free slot(s) of rock, water above, open air below.",
-                        ceiling.toShortString(), composition.freeSlots()))
+                        "Spring opened at %s — saturated rock holding %d drop(s) in %d pore(s), face cut below it.",
+                        ceiling.toShortString(), composition.water(), composition.porosity()))
                 .withStyle(ChatFormatting.GREEN), false);
         source.sendSuccess(() -> Component.literal(
-                        "  Stand under it and watch the underside. Expect drips at the top face as it "
-                                + "soaks, then water below. A placed source is infinite, so it should "
-                                + "keep going for about 20 seconds and then stop.")
+                        "  No water was placed. It runs on recharge alone, so it should keep going — "
+                                + "perennial if recharge outpaces the pore space, drying and returning "
+                                + "if it does not. Dig further in and the spring follows you.")
                 .withStyle(ChatFormatting.GRAY), false);
         return 1;
     }

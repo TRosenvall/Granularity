@@ -22,19 +22,21 @@ import net.minecraft.world.level.material.Fluids;
  *
  * <ul>
  *   <li><b>Infiltration</b> — water standing on porous rock soaks into it.</li>
- *   <li><b>Seepage</b> — rock carrying more water than it should gives it back at an open face.</li>
+ *   <li><b>Seepage</b> — saturated rock gives water back at an open face, driven by a disturbance.</li>
+ *   <li><b>Weeping</b> — the same thing without a disturbance, on vanilla's random tick, which is what
+ *       makes a cave below the water table wet with nobody there to cause it.</li>
  * </ul>
  *
- * <h2>Only water above baseline seeps</h2>
- * The rule that keeps this from draining the world. Every porous block below the water table holds
- * water at equilibrium, and a cave cuts through thousands of them; if any wet block with an open face
- * discharged, the entire saturated zone would empty into the nearest cave and go on doing it forever,
- * because the baseline would keep topping it back up.
+ * <h2>Discharge is not conditional on disturbance</h2>
+ * Seepage once released only water <i>above</i> baseline, reasoning that an aquifer at equilibrium is
+ * not discharging. That is exactly backwards. A real aquifer at equilibrium discharges <b>constantly</b>
+ * and is at equilibrium because recharge matches it — dynamic equilibrium, not stillness. Under the old
+ * rule, cutting into a saturated bed gave one trickle and stopped, where cutting into a permeable
+ * streambed should give water that keeps coming.
  *
- * <p>An aquifer at equilibrium is not discharging — that is what equilibrium means. So seepage is
- * limited to the <i>deviation</i>: water that arrived from somewhere and has somewhere to go. Which
- * also makes a spring what §6.3 says it is, a response to recharge, rather than a permanent hole in
- * the rock.
+ * <p>What stops the world draining is therefore recharge, not a refusal to flow. See
+ * {@code WaterTicker}'s recharge, keyed to regional rainfall, and {@link #weep} for the ambient case
+ * and the two problems that shaped it.
  *
  * <h2>Lakes do not drain</h2>
  * A vanilla source block is infinite and stays that way. Reducing it would be more honest about
@@ -45,7 +47,25 @@ import net.minecraft.world.level.material.Fluids;
  */
 public final class WaterExchange {
 
+    /**
+     * A tally of what the ambient weep actually did, for the diagnostic command.
+     *
+     * <p>Here because "no water is coming out of the rock" has two causes that look identical from
+     * inside the game and need opposite fixes: the weep is not running, or it is running and a single
+     * drop is too small to see. Counting each stage apart tells them apart. Design note in CLAUDE.md:
+     * log a count of what a pass actually did, and check the number.
+     */
+    private static long ticksSeen;
+    private static long withOpenFace;
+    private static long withWater;
+    private static long emitted;
+
     private WaterExchange() {
+    }
+
+    /** Ambient weep counters: random ticks seen, of those open-faced, watered, and emitting. */
+    public static long[] weepTally() {
+        return new long[]{ticksSeen, withOpenFace, withWater, emitted};
     }
 
     /**
@@ -109,11 +129,34 @@ public final class WaterExchange {
     }
 
     /**
-     * Rock holding more water than its baseline gives the excess back at an open face.
+     * Wet rock gives water back at an open face — a spring, wherever one happens to be.
      *
      * <p>Downward first and sideways second, which is not a preference but gravity: water leaves by
      * the lowest opening available to it, and a seep that chose a side face over a floor would run
      * uphill out of a wall.
+     *
+     * <h2>A spring is a condition, not a place</h2>
+     * This used to release only water <i>above</i> baseline, on the grounds that an aquifer at
+     * equilibrium is not discharging. That was wrong, and wrong in an instructive way: a real aquifer
+     * at equilibrium is discharging <b>constantly</b>, and is at equilibrium because recharge matches
+     * it. Static equilibrium is not the same thing as dynamic equilibrium, and only the second one
+     * describes water.
+     *
+     * <p>The consequence of the old rule was that digging into a saturated bed gave a one-off trickle
+     * and then nothing, when what should happen is what happens when you cut into a permeable
+     * streambed: water keeps coming. So baseline water discharges too, and what stops the world
+     * draining is {@code WaterTicker}'s recharge rather than a refusal to flow.
+     *
+     * <p>Nothing marks a spring, and nothing needs to. A spring is saturated permeable rock meeting
+     * open air; cut deeper into the hillside and the new face is the spring, because it satisfies the
+     * same condition the old one did. There is no object to place and none to destroy.
+     *
+     * <h2>Rate</h2>
+     * Limited by the rock's <b>pore space</b>, not by its free slots. Free slots is the right measure
+     * for water filling unsaturated rock; for rock that is already full it is zero, and saturated rock
+     * plainly does transmit water — that is what an aquifer is. What carries flow through full rock is
+     * the pore space itself, so a bed of porosity four gives water back four times as fast as a bed of
+     * porosity one.
      */
     public static int seep(ServerLevel level, LevelWaterVolume volume, BlockPos pos) {
         int x = pos.getX();
@@ -122,7 +165,14 @@ public final class WaterExchange {
         if (!volume.contains(x, y, z)) {
             return 0;
         }
-        int excess = volume.water(x, y, z) - volume.baselineWater(x, y, z);
+        int held = volume.water(x, y, z);
+        if (held <= 0) {
+            return 0;
+        }
+        // Pore space sets the rate; a block never gives up everything it holds in one tick, or a
+        // spring would be a burst followed by nothing while it waited to be recharged.
+        int rate = Math.max(1, volume.grainsPoreSpace(x, y, z) / 2);
+        int excess = Math.min(held, rate);
         if (excess <= 0) {
             return 0;
         }
@@ -153,6 +203,78 @@ public final class WaterExchange {
                 outlet.getX() + 0.5, outlet.getY() + 0.5, outlet.getZ() + 0.5,
                 Math.min(released, 3), 0.2, 0.2, 0.2, 0.0);
         return released;
+    }
+
+    /**
+     * A wet rock face weeping of its own accord — the aquifer in throughflow.
+     *
+     * <p>Design §8's "random-tick-style budget", and it is what makes a wet cave wet without anybody
+     * touching it. Saturated rock meeting open air <i>is</i> discharging; that is what a weep is, and
+     * it should not need a pickaxe nearby to start.
+     *
+     * <h2>It changes nothing, and that is the point</h2>
+     * No storage is drawn down, no deviation is written, no patch is seeded. The drop is passing
+     * <i>through</i>: at equilibrium the aquifer discharges and is recharged at the same rate, so its
+     * storage is unchanged by definition. Booked as injected, because the water comes from a catchment
+     * this mod does not simulate.
+     *
+     * <p>Two problems fall away as a result, and both were real.
+     *
+     * <p>The <b>cascade</b>: a weep that placed water with neighbour updates would trigger
+     * {@code NaturalStoneBlock.neighborChanged}, which disturbs, which seeds a patch, which seeps,
+     * which places water, which disturbs again. Every ambient drip would bootstrap a self-sustaining
+     * patch and a cave system would accumulate hundreds — the tick budget would hold, but the queue
+     * would grow without bound and a player's own disturbance would wait behind all of it. So this
+     * places water with {@link Block#UPDATE_CLIENTS} and schedules the fluid tick by hand: vanilla
+     * still animates it, and nothing listening is told.
+     *
+     * <p>The <b>drain</b>: recharge only runs inside patches, so a weep that <i>did</i> draw its block
+     * down would empty it and stop, with nothing to refill it. Two mechanisms modelling one steady
+     * state, and they would have fought.
+     *
+     * @return drops emitted, which is 0 or 1
+     */
+    public static int weep(ServerLevel level, BlockPos pos, long salt) {
+        ticksSeen++;
+        // The open face is asked FIRST, and the order is the whole cost of this feature.
+        //
+        // Turning random ticks on for natural stone makes almost every section in the world randomly
+        // ticking, because natural stone is what the world is made of — vanilla only ticks a section
+        // that contains a ticking block, and underground that used to be none. That is tens of
+        // thousands of picks a tick across the simulation distance. Deriving a composition in this
+        // method costs about six microseconds and would turn the lot into tens of milliseconds a
+        // tick; six block-state lookups cost tens of nanoseconds and throw out every enclosed block,
+        // which is nearly all of them. Only rock that actually faces open air is worth a derivation.
+        BlockPos outlet = openFace(level, pos);
+        if (outlet == null) {
+            return 0;
+        }
+        withOpenFace++;
+        FluidState standing = level.getFluidState(outlet);
+        int already = standing.is(Fluids.WATER)
+                ? WaterLevels.dropsFor(standing.getAmount(), standing.isSource())
+                : 0;
+        if (already >= Composition.SLOTS - 1) {
+            return 0;
+        }
+
+        // Only now, with an opening confirmed and room in it, is the rock worth asking about.
+        // Deviations included: rock drained by a spring next door should stop weeping until it has
+        // recovered, rather than going on weeping out of a baseline it no longer holds.
+        if (GranularityWater.waterAt(level, pos, salt) <= 0) {
+            return 0;
+        }
+        withWater++;
+
+        level.setBlock(outlet, WaterRelease.stateFor(already + 1), Block.UPDATE_CLIENTS);
+        // Scheduled by hand, because the placement above deliberately told no neighbours. Without
+        // this the block would sit there un-ticked and never flow or fade.
+        level.scheduleTick(outlet, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        level.sendParticles(ParticleTypes.DRIPPING_WATER,
+                outlet.getX() + 0.5, outlet.getY() + 0.5, outlet.getZ() + 0.5,
+                1, 0.2, 0.2, 0.2, 0.0);
+        emitted++;
+        return 1;
     }
 
     /** The face water would leave by: the floor if it is open, otherwise a side. Never upward. */

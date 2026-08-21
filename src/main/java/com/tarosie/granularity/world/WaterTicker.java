@@ -1,6 +1,7 @@
 package com.tarosie.granularity.world;
 
 import com.tarosie.granularity.Granularity;
+import com.tarosie.granularity.core.Rng;
 import com.tarosie.granularity.core.WaterMigration;
 import com.tarosie.granularity.core.WaterMigration.WaterBounds;
 import com.tarosie.granularity.core.WorldSalt;
@@ -53,8 +54,17 @@ import net.neoforged.neoforge.event.tick.LevelTickEvent;
 @EventBusSubscriber(modid = Granularity.MODID)
 public final class WaterTicker {
 
-    /** How many disturbed patches may be stepped in one level tick. The budget §8 asks for. */
-    private static final int PATCHES_PER_TICK = 4;
+    /**
+     * How many disturbed patches may be stepped in one level tick. The budget §8 asks for.
+     *
+     * <p>Two, not four, and the number came from a measurement rather than a feeling. A patch step
+     * touches 729 blocks and a composition is six microseconds, so four patches was some eighteen
+     * milliseconds of a fifty millisecond tick — a third of the server's budget for a feature that is
+     * meant to be in the background. With compositions now cached across ticks the repeat cost is far
+     * lower, but the first pass over new ground still is not free, and a queue drains at the same rate
+     * either way: a patch waiting a tick longer is invisible, a server running behind is not.
+     */
+    private static final int PATCHES_PER_TICK = 2;
 
     /**
      * How far around a disturbance the rule runs, in blocks.
@@ -90,15 +100,22 @@ public final class WaterTicker {
     /**
      * The longest a patch may stay active however busy it is.
      *
-     * <p>A safety valve, not a physical quantity. An infinite vanilla source feeding porous rock that
-     * seeps out somewhere lower is a genuine loop — the rock fills, gives water back, makes room, and
-     * fills again — and every turn of it counts as work, so the quiet counter never runs down. The
-     * water in such a place is doing what water does; what must not happen is that one bucket pins a
-     * patch to the tick loop for the rest of the session. After this many ticks the patch is dropped
-     * and only a fresh disturbance brings it back.
+     * <p>A backstop, and deliberately generous now. It was twenty seconds when the only thing that
+     * could run forever was an infinite vanilla source feeding a loop — a cheat that needed a leash.
+     * Since recharge arrived, sustained flow is the <i>intended</i> behaviour: a spring is meant to
+     * keep running, and a patch that keeps working is a patch doing its job. Ten minutes is long
+     * enough that no real spring is cut off mid-flow, and short enough that a patch nobody is near
+     * eventually stops being stepped.
      */
-    private static final int MAX_PATCH_TICKS = 400;
+    private static final int MAX_PATCH_TICKS = 12000;
 
+    /**
+     * How often rock below its baseline gets a drop back, and how much.
+     *
+     * <p>The interval is fixed; the <i>amount</i> comes from {@link Recharge}, which reads regional
+     * rainfall. That split is the point: discharge is a property of the block, recharge is a property
+     * of the catchment, and only the second one varies across the world.
+     */
     /** How often the stored deviations are pulled one step back toward the derived baseline. */
     private static final int DECAY_INTERVAL = 600;
 
@@ -161,6 +178,11 @@ public final class WaterTicker {
         if (!(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
+        // Before the early-out, not after it. The weep tally reports on ambient weeping, which
+        // deliberately seeds no patches — so putting this below the "no active patches" return meant
+        // the one mechanism it was built to observe was the one it could never see.
+        reportWeeps(level.getGameTime());
+
         Map<Long, Patch> active = ACTIVE.get(level.dimension());
         if (active == null || active.isEmpty()) {
             return;
@@ -228,6 +250,35 @@ public final class WaterTicker {
             }
         }
 
+        // Recharge before migration, so water arriving from the catchment gets to move in the same
+        // tick rather than waiting a step at the back of the bed.
+        int recharged = 0;
+        if (tick % Recharge.INTERVAL == 0) {
+            // Sampled once for the patch, not per block: rainfall varies over hundreds of blocks and
+            // a patch is nine across, so per-block sampling would buy nothing for five biome lookups
+            // a block.
+            double rate = Recharge.dropsPerApplication(level, centre);
+            for (int x = bounds.minX(); x <= bounds.maxX(); x++) {
+                for (int z = bounds.minZ(); z <= bounds.maxZ(); z++) {
+                    for (int y = bounds.minY(); y <= bounds.maxY(); y++) {
+                        if (!volume.contains(x, y, z)) {
+                            continue;
+                        }
+                        // Stochastic rounding, design §12: a rate of a third of a drop really does
+                        // mean one drop on one application in three, rather than a rate rounded to
+                        // nothing. Drawn per block and per tick so neighbours do not recharge in
+                        // lockstep.
+                        long hash = Rng.positionHash(x, y, z, salt);
+                        int drops = (int) Rng.stochasticFloor(
+                                rate, Rng.uniform(hash, tick, Rng.STREAM_RAINFALL));
+                        if (drops > 0) {
+                            recharged += volume.recharge(x, y, z, drops);
+                        }
+                    }
+                }
+            }
+        }
+
         int moved = WaterMigration.step(volume, bounds, tick, salt);
 
         // Seepage last, so water that arrived this tick has already had its chance to keep going
@@ -243,7 +294,7 @@ public final class WaterTicker {
                 }
             }
         }
-        return moved + crossed;
+        return moved + crossed + recharged;
     }
 
     /**
@@ -316,6 +367,35 @@ public final class WaterTicker {
             ACTIVE.remove(level.dimension());
             DEVIATED.remove(level.dimension());
         }
+    }
+
+    /** How often the ambient weep tally is written to the log, in ticks. */
+    private static final int WEEP_REPORT_INTERVAL = 200;
+
+    private static long lastWeepReport = -1;
+
+    /**
+     * Write what the ambient weep actually did into the log, when it changes.
+     *
+     * <p>Because the alternative is asking a person to read four numbers off a chat line and type
+     * them back, which is a slow way to find out something the server already knows. This is the
+     * "log a count of what a pass actually wired" rule from CLAUDE.md, applied to the one mechanism
+     * whose failure mode is looking exactly like success: silence.
+     *
+     * <p>Only when the numbers move, so an idle world logs nothing.
+     */
+    private static void reportWeeps(long tick) {
+        if (tick % WEEP_REPORT_INTERVAL != 0) {
+            return;
+        }
+        long[] tally = WaterExchange.weepTally();
+        if (tally[0] == lastWeepReport) {
+            return;
+        }
+        lastWeepReport = tally[0];
+        Granularity.LOGGER.info(
+                "Weep tally: {} random ticks on wet-capable stone, {} with an open face, {} holding "
+                        + "water, {} emitted.", tally[0], tally[1], tally[2], tally[3]);
     }
 
     /** Drop everything, for a server shutting down or a test starting clean. */
