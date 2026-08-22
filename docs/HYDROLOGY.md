@@ -329,6 +329,52 @@ blocks a tick — with no lighting propagation at all — already put the server
 Clouds, sky darkening and per-chunk rain all want the same enabling piece instead: **the humidity
 field synced to the client**, and rendering from it. No blocks, no lighting, nothing saved.
 
+## What the client can and cannot know
+
+Composition is a pure function of position and salt, and the salt is synced at login precisely so the
+client can derive the same world the server does. So the client can answer *what a block should hold*
+without asking anyone. It cannot answer *what has happened*: deviations, patches, springs and the sky
+are server state.
+
+Both halves are now synced, and the split is worth keeping in mind when adding anything visual:
+
+- **`HumiditySyncPayload`** — one byte per chunk, saturation rather than drops. Saturation is what
+  every consumer wants, and it means the client never computes a capacity, which would need the biome
+  and heightmap and would have to agree with the server exactly or the sky would contradict the
+  weather.
+- **`NearbyWaterPayload`** — deviations within 24 blocks, plus what the tiers are doing. Sending all
+  nine surrounding chunks overran the codec's element limit at 2,060 entries and **disconnected the
+  player**: a codec limit throws at encode time, so a cap that can be reached is a crash waiting for
+  the estimate to be wrong. Filter at the source and truncate; never let the codec be the thing that
+  stops you.
+- **`SkyGloom`** — heavy air is greyer and closer. This cannot be done server-side at all: vanilla's
+  only weather lever is the level's rain state, which draws rain as a side effect, so "overcast but
+  dry" is a state the server has no way to ask for. Sampled along the *view direction*, because
+  vanilla fog is isotropic — one colour and one distance for the whole view — so a single reading
+  underfoot makes a front look identical whichever way you turn.
+- **`CompositionDebug`** — the command's readout on F3, keyed to what the crosshair is on.
+
+**Vanilla weather is driven by the boolean, not the level.** `ServerLevel.tickWeather` recomputes
+`rainLevel` every tick from the stored `isRaining()` flag, so a value written from outside is
+overwritten on the next tick and decays to nothing — and the sync packet only fires when vanilla's own
+comparison changes, so it never reaches the client either. The sky stayed clear in a downpour with no
+error anywhere. Set the flag and let vanilla ease, broadcast, darken and draw.
+
+## The wall that keeps reappearing
+
+Five separate symptoms, one cause: **water in the open is vanilla's, and vanilla recomputes it.**
+
+1. Released water does not fall — `getNewLiquid` returns empty and sets air before `spread` runs.
+2. Ambient weeps cannot accumulate — each drop is erased long before the next.
+3. Thin films instead of flow — a two-drop release is amount 2, which renders as almost nothing.
+4. Springs need topping up every tick, or the outlet is erased between visits.
+5. Water flowing over porous rock is not diminished by what soaks in — whatever is removed is
+   refilled from upstream on the next fluid tick.
+
+Every one of these is design §7's unification: water in open space being **our slots too**, so a
+stream is drops we account for rather than a number vanilla recalculates. It is no longer a
+nice-to-have; it is the thing blocking the rest.
+
 ## Not built yet
 
 - **Springs at outcrops.** §6.3's payoff. The beds exist and seepage exists; what is missing is

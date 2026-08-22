@@ -28,6 +28,15 @@ public final class SaltLifecycle {
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar("1").playToClient(
                 SaltSyncPayload.TYPE, SaltSyncPayload.STREAM_CODEC, SaltSyncPayload::handle);
+        // The sky, on the same registrar. Everything the player sees of the weather comes down this
+        // wire; see HumiditySyncPayload for why it carries saturation rather than drops.
+        event.registrar("1").playToClient(
+                HumiditySyncPayload.TYPE, HumiditySyncPayload.STREAM_CODEC,
+                HumiditySyncPayload::handle);
+        // Water that has actually moved, which no amount of deriving can tell the client.
+        event.registrar("1").playToClient(
+                NearbyWaterPayload.TYPE, NearbyWaterPayload.STREAM_CODEC,
+                NearbyWaterPayload::handle);
     }
 
     @SubscribeEvent
